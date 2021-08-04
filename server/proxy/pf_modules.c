@@ -66,7 +66,7 @@ static BOOL pf_modules_proxy_ArrayList_ForEachFkt(void* data, size_t index, va_l
 	proxyPlugin* plugin = (proxyPlugin*)data;
 	PF_HOOK_TYPE type;
 	proxyData* pdata;
-	BOOL ok = FALSE;
+	BOOL ok = TRUE;
 
 	type = va_arg(ap, PF_HOOK_TYPE);
 	pdata = va_arg(ap, proxyData*);
@@ -138,7 +138,7 @@ static BOOL pf_modules_ArrayList_ForEachFkt(void* data, size_t index, va_list ap
 	PF_FILTER_TYPE type;
 	proxyData* pdata;
 	void* param;
-	BOOL result = FALSE;
+	BOOL result = TRUE;
 
 	WINPR_UNUSED(index);
 
