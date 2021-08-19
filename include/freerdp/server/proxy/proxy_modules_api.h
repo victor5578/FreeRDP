@@ -45,7 +45,7 @@ typedef struct proxy_plugin
 	const char* name;        /* unique module name */
 	const char* description; /* module description */
 
-	BOOL (*PluginUnload)(void);
+	BOOL (*PluginUnload)(struct proxy_plugin* plugin, proxyModule* module, void* userdata);
 
 	/* proxy hooks. a module can set these function pointers to register hooks */
 	proxyHookFn ClientPreConnect;
@@ -75,7 +75,7 @@ typedef struct proxy_plugin
 typedef struct proxy_plugins_manager
 {
 	/* used for registering a fresh new proxy plugin. */
-	BOOL (*RegisterPlugin)(const proxyPlugin* plugin, proxyModule* module);
+	BOOL (*RegisterPlugin)(const proxyPlugin* plugin, proxyModule* module, void* userdata);
 
 	/* used for setting plugin's per-session info. */
 	BOOL (*SetPluginData)(const char*, proxyData*, void*);
@@ -88,7 +88,7 @@ typedef struct proxy_plugins_manager
 } proxyPluginsManager;
 
 typedef BOOL (*proxyModuleEntryPoint)(const proxyPluginsManager* plugins_manager,
-                                      proxyModule* module);
+                                      proxyModule* module, void* userdata);
 
 /* filter events parameters */
 #define WINPR_PACK_PUSH
@@ -146,7 +146,7 @@ extern "C"
 #endif
 
 	FREERDP_API BOOL proxy_module_entry_point(const proxyPluginsManager* plugins_manager,
-	                                          proxyModule* module);
+	                                          proxyModule* module, void* userdata);
 
 #ifdef __cplusplus
 };

@@ -44,13 +44,13 @@ static BOOL demo_filter_keyboard_event(proxyData* pdata, void* param)
 	return TRUE;
 }
 
-static BOOL demo_plugin_unload()
+static BOOL demo_plugin_unload(proxyPlugin* plugin, proxyModule* module, void* userdata)
 {
 	std::cout << "C++ demo plugin: unloading..." << std::endl;
 	return TRUE;
 }
 
-static proxyPlugin demo_plugin = {
+static const proxyPlugin demo_plugin = {
 	plugin_name,                /* name */
 	plugin_desc,                /* description */
 	demo_plugin_unload,         /* PluginUnload */
@@ -69,9 +69,10 @@ static proxyPlugin demo_plugin = {
 	NULL                        /* ServerFetchTargetAddr */
 };
 
-BOOL proxy_module_entry_point(const proxyPluginsManager* plugins_manager, proxyModule* module)
+BOOL proxy_module_entry_point(const proxyPluginsManager* plugins_manager, proxyModule* module,
+                              void* userdata)
 {
 	g_plugins_manager = plugins_manager;
 
-	return plugins_manager->RegisterPlugin(&demo_plugin, module);
+	return plugins_manager->RegisterPlugin(&demo_plugin, module, userdata);
 }

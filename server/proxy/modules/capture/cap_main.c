@@ -249,7 +249,7 @@ static BOOL capture_plugin_server_post_connect(proxyData* pdata)
 	return TRUE;
 }
 
-static BOOL capture_plugin_unload(void)
+static BOOL capture_plugin_unload(proxyPlugin* plugin, proxyModule* module, void* userdata)
 {
 	capture_plugin_config_free_internal(&cconfig);
 	return TRUE;
@@ -274,7 +274,8 @@ static proxyPlugin demo_plugin = {
 	NULL                                /* ServerFetchTargetAddr */
 };
 
-BOOL proxy_module_entry_point(const proxyPluginsManager* plugins_manager, proxyModule* module)
+BOOL proxy_module_entry_point(const proxyPluginsManager* plugins_manager, proxyModule* module,
+                              void* userdata)
 {
 	g_plugins_manager = plugins_manager;
 
@@ -285,5 +286,5 @@ BOOL proxy_module_entry_point(const proxyPluginsManager* plugins_manager, proxyM
 	}
 
 	WLog_INFO(TAG, "host: %s, port: %" PRIu16 "", cconfig.host, cconfig.port);
-	return plugins_manager->RegisterPlugin(&demo_plugin, module);
+	return plugins_manager->RegisterPlugin(&demo_plugin, module, userdata);
 }

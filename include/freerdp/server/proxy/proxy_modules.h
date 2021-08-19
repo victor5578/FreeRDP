@@ -72,7 +72,7 @@ extern "C"
 	 * @param ep A module entry point function, must NOT be NULL
 	 * @return TRUE for success, FALSE otherwise
 	 */
-	FREERDP_API BOOL pf_modules_add(proxyModule* module, proxyModuleEntryPoint ep);
+	FREERDP_API BOOL pf_modules_add(proxyModule* module, proxyModuleEntryPoint ep, void* userdata);
 
 	FREERDP_API BOOL pf_modules_is_plugin_loaded(proxyModule* module, const char* plugin_name);
 	FREERDP_API void pf_modules_list_loaded_plugins(proxyModule* module);

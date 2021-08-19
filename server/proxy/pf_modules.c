@@ -35,6 +35,13 @@
 
 #define MODULE_ENTRY_POINT "proxy_module_entry_point"
 
+typedef struct proxy_plugin_internal
+{
+	proxyPlugin plugin;
+	proxyModule* module;
+	void* userdata;
+} proxyPluginInternal;
+
 struct proxy_module
 {
 	wArrayList* plugins;
@@ -67,7 +74,7 @@ static const char* pf_modules_get_hook_type_string(PF_HOOK_TYPE result)
 
 static BOOL pf_modules_proxy_ArrayList_ForEachFkt(void* data, size_t index, va_list ap)
 {
-	proxyPlugin* plugin = (proxyPlugin*)data;
+	proxyPluginInternal* plugin = (proxyPluginInternal*)data;
 	PF_HOOK_TYPE type;
 	proxyData* pdata;
 	BOOL ok = TRUE;
@@ -77,40 +84,40 @@ static BOOL pf_modules_proxy_ArrayList_ForEachFkt(void* data, size_t index, va_l
 	type = va_arg(ap, PF_HOOK_TYPE);
 	pdata = va_arg(ap, proxyData*);
 
-	WLog_VRB(TAG, "running hook %s.%s", plugin->name, pf_modules_get_hook_type_string(type));
+	WLog_VRB(TAG, "running hook %s.%s", plugin->plugin.name, pf_modules_get_hook_type_string(type));
 
 	switch (type)
 	{
 		case HOOK_TYPE_CLIENT_PRE_CONNECT:
-			IFCALLRET(plugin->ClientPreConnect, ok, pdata);
+			IFCALLRET(plugin->plugin.ClientPreConnect, ok, pdata);
 			break;
 
 		case HOOK_TYPE_CLIENT_POST_CONNECT:
-			IFCALLRET(plugin->ClientPostConnect, ok, pdata);
+			IFCALLRET(plugin->plugin.ClientPostConnect, ok, pdata);
 			break;
 
 		case HOOK_TYPE_CLIENT_LOGIN_FAILURE:
-			IFCALLRET(plugin->ClientLoginFailure, ok, pdata);
+			IFCALLRET(plugin->plugin.ClientLoginFailure, ok, pdata);
 			break;
 
 		case HOOK_TYPE_CLIENT_END_PAINT:
-			IFCALLRET(plugin->ClientEndPaint, ok, pdata);
+			IFCALLRET(plugin->plugin.ClientEndPaint, ok, pdata);
 			break;
 
 		case HOOK_TYPE_SERVER_POST_CONNECT:
-			IFCALLRET(plugin->ServerPostConnect, ok, pdata);
+			IFCALLRET(plugin->plugin.ServerPostConnect, ok, pdata);
 			break;
 
 		case HOOK_TYPE_SERVER_CHANNELS_INIT:
-			IFCALLRET(plugin->ServerChannelsInit, ok, pdata);
+			IFCALLRET(plugin->plugin.ServerChannelsInit, ok, pdata);
 			break;
 
 		case HOOK_TYPE_SERVER_CHANNELS_FREE:
-			IFCALLRET(plugin->ServerChannelsFree, ok, pdata);
+			IFCALLRET(plugin->plugin.ServerChannelsFree, ok, pdata);
 			break;
 
 		case HOOK_TYPE_SERVER_SESSION_END:
-			IFCALLRET(plugin->ServerSessionEnd, ok, pdata);
+			IFCALLRET(plugin->plugin.ServerSessionEnd, ok, pdata);
 			break;
 
 		case HOOK_LAST:
@@ -120,7 +127,7 @@ static BOOL pf_modules_proxy_ArrayList_ForEachFkt(void* data, size_t index, va_l
 
 	if (!ok)
 	{
-		WLog_INFO(TAG, "plugin %s, hook %s failed!", plugin->name,
+		WLog_INFO(TAG, "plugin %s, hook %s failed!", plugin->plugin.name,
 		          pf_modules_get_hook_type_string(type));
 		return FALSE;
 	}
@@ -142,7 +149,7 @@ BOOL pf_modules_run_hook(proxyModule* module, PF_HOOK_TYPE type, proxyData* pdat
 
 static BOOL pf_modules_ArrayList_ForEachFkt(void* data, size_t index, va_list ap)
 {
-	proxyPlugin* plugin = (proxyPlugin*)data;
+	proxyPluginInternal* plugin = (proxyPluginInternal*)data;
 	PF_FILTER_TYPE type;
 	proxyData* pdata;
 	void* param;
@@ -154,28 +161,28 @@ static BOOL pf_modules_ArrayList_ForEachFkt(void* data, size_t index, va_list ap
 	pdata = va_arg(ap, proxyData*);
 	param = va_arg(ap, void*);
 
-	WLog_VRB(TAG, "[%s]: running filter: %s", __FUNCTION__, plugin->name);
+	WLog_VRB(TAG, "[%s]: running filter: %s", __FUNCTION__, plugin->plugin.name);
 
 	switch (type)
 	{
 		case FILTER_TYPE_KEYBOARD:
-			IFCALLRET(plugin->KeyboardEvent, result, pdata, param);
+			IFCALLRET(plugin->plugin.KeyboardEvent, result, pdata, param);
 			break;
 
 		case FILTER_TYPE_MOUSE:
-			IFCALLRET(plugin->MouseEvent, result, pdata, param);
+			IFCALLRET(plugin->plugin.MouseEvent, result, pdata, param);
 			break;
 
 		case FILTER_TYPE_CLIENT_PASSTHROUGH_CHANNEL_DATA:
-			IFCALLRET(plugin->ClientChannelData, result, pdata, param);
+			IFCALLRET(plugin->plugin.ClientChannelData, result, pdata, param);
 			break;
 
 		case FILTER_TYPE_SERVER_PASSTHROUGH_CHANNEL_DATA:
-			IFCALLRET(plugin->ServerChannelData, result, pdata, param);
+			IFCALLRET(plugin->plugin.ServerChannelData, result, pdata, param);
 			break;
 
 		case FILTER_TYPE_SERVER_FETCH_TARGET_ADDR:
-			IFCALLRET(plugin->ServerFetchTargetAddr, result, pdata, param);
+			IFCALLRET(plugin->plugin.ServerFetchTargetAddr, result, pdata, param);
 			break;
 
 		case FILTER_LAST:
@@ -186,7 +193,7 @@ static BOOL pf_modules_ArrayList_ForEachFkt(void* data, size_t index, va_list ap
 	if (!result)
 	{
 		/* current filter return FALSE, no need to run other filters. */
-		WLog_DBG(TAG, "plugin %s, filter type [%s] returned FALSE", plugin->name,
+		WLog_DBG(TAG, "plugin %s, filter type [%s] returned FALSE", plugin->plugin.name,
 		         pf_modules_get_filter_type_string(type));
 	}
 	return result;
@@ -263,32 +270,37 @@ static void pf_modules_abort_connect(proxyData* pdata)
 
 static BOOL pf_modules_register_ArrayList_ForEachFkt(void* data, size_t index, va_list ap)
 {
-	proxyPlugin* plugin = (proxyPlugin*)data;
+	proxyPluginInternal* plugin = (proxyPluginInternal*)data;
 	proxyPlugin* plugin_to_register = va_arg(ap, proxyPlugin*);
 
 	WINPR_UNUSED(index);
 
-	if (strcmp(plugin->name, plugin_to_register->name) == 0)
+	if (strcmp(plugin->plugin.name, plugin_to_register->name) == 0)
 	{
-		WLog_ERR(TAG, "can not register plugin '%s', it is already registered!", plugin->name);
+		WLog_ERR(TAG, "can not register plugin '%s', it is already registered!",
+		         plugin->plugin.name);
 		return FALSE;
 	}
 	return TRUE;
 }
 
-static BOOL pf_modules_register_plugin(const proxyPlugin* plugin_to_register, proxyModule* module)
+static BOOL pf_modules_register_plugin(const proxyPlugin* plugin_to_register, proxyModule* module,
+                                       void* userdata)
 {
+	proxyPluginInternal internal = { 0 };
 	WINPR_ASSERT(module);
 
 	if (!plugin_to_register)
 		return FALSE;
 
+	internal.plugin = *plugin_to_register;
+	internal.module = module;
+	internal.userdata = userdata;
 	/* make sure there's no other loaded plugin with the same name of `plugin_to_register`. */
-	if (!ArrayList_ForEach(module->plugins, pf_modules_register_ArrayList_ForEachFkt,
-	                       plugin_to_register))
+	if (!ArrayList_ForEach(module->plugins, pf_modules_register_ArrayList_ForEachFkt, &internal))
 		return FALSE;
 
-	if (!ArrayList_Append(module->plugins, plugin_to_register))
+	if (!ArrayList_Append(module->plugins, &internal))
 	{
 		WLog_ERR(TAG, "[%s]: failed adding plugin to list: %s", __FUNCTION__,
 		         plugin_to_register->name);
@@ -300,13 +312,13 @@ static BOOL pf_modules_register_plugin(const proxyPlugin* plugin_to_register, pr
 
 static BOOL pf_modules_load_ArrayList_ForEachFkt(void* data, size_t index, va_list ap)
 {
-	proxyPlugin* plugin = (proxyPlugin*)data;
+	proxyPluginInternal* plugin = (proxyPluginInternal*)data;
 	const char* plugin_name = va_arg(ap, const char*);
 
 	WINPR_UNUSED(index);
 	WINPR_UNUSED(ap);
 
-	if (strcmp(plugin->name, plugin_name) == 0)
+	if (strcmp(plugin->plugin.name, plugin_name) == 0)
 		return TRUE;
 	return FALSE;
 }
@@ -319,13 +331,13 @@ BOOL pf_modules_is_plugin_loaded(proxyModule* module, const char* plugin_name)
 
 static BOOL pf_modules_print_ArrayList_ForEachFkt(void* data, size_t index, va_list ap)
 {
-	proxyPlugin* plugin = (proxyPlugin*)data;
+	proxyPluginInternal* plugin = (proxyPluginInternal*)data;
 
 	WINPR_UNUSED(index);
 	WINPR_UNUSED(ap);
 
-	WLog_INFO(TAG, "\tName: %s", plugin->name);
-	WLog_INFO(TAG, "\tDescription: %s", plugin->description);
+	WLog_INFO(TAG, "\tName: %s", plugin->plugin.name);
+	WLog_INFO(TAG, "\tDescription: %s", plugin->plugin.description);
 	return TRUE;
 }
 
@@ -349,7 +361,7 @@ static const proxyPluginsManager plugins_manager = { pf_modules_register_plugin,
 	                                                 pf_modules_get_plugin_data,
 	                                                 pf_modules_abort_connect };
 
-static BOOL pf_modules_load_module(const char* module_path, proxyModule* module)
+static BOOL pf_modules_load_module(const char* module_path, proxyModule* module, void* userdata)
 {
 	HMODULE handle = NULL;
 	proxyModuleEntryPoint pEntryPoint;
@@ -373,7 +385,7 @@ static BOOL pf_modules_load_module(const char* module_path, proxyModule* module)
 		WLog_ERR(TAG, "ArrayList_Append failed!");
 		goto error;
 	}
-	return pf_modules_add(module, pEntryPoint);
+	return pf_modules_add(module, pEntryPoint, userdata);
 
 error:
 	FreeLibrary(handle);
@@ -389,11 +401,12 @@ static void free_handle(void* obj)
 
 static void free_plugin(void* obj)
 {
-	proxyPlugin* plugin = (proxyPlugin*)obj;
+	proxyPluginInternal* plugin = (proxyPluginInternal*)obj;
 	WINPR_ASSERT(plugin);
 
-	if (!IFCALLRESULT(TRUE, plugin->PluginUnload))
-		WLog_WARN(TAG, "PluginUnload failed for plugin '%s'", plugin->name);
+	if (!IFCALLRESULT(TRUE, plugin->plugin.PluginUnload, &plugin->plugin, plugin->module,
+	                  plugin->userdata))
+		WLog_WARN(TAG, "PluginUnload failed for plugin '%s'", plugin->plugin.name);
 }
 
 proxyModule* pf_modules_new(const char* root_dir, const char** modules, size_t count)
@@ -438,7 +451,7 @@ proxyModule* pf_modules_new(const char* root_dir, const char** modules, size_t c
 		for (i = 0; i < count; i++)
 		{
 			char* fullpath = GetCombinedPath(root_dir, modules[i]);
-			pf_modules_load_module(fullpath, module);
+			pf_modules_load_module(fullpath, module, NULL);
 			free(fullpath);
 		}
 	}
@@ -459,10 +472,10 @@ void pf_modules_free(proxyModule* module)
 	ArrayList_Free(module->handles);
 }
 
-BOOL pf_modules_add(proxyModule* module, proxyModuleEntryPoint ep)
+BOOL pf_modules_add(proxyModule* module, proxyModuleEntryPoint ep, void* userdata)
 {
 	WINPR_ASSERT(module);
 	WINPR_ASSERT(ep);
 
-	return ep(&plugins_manager, module);
+	return ep(&plugins_manager, module, userdata);
 }
