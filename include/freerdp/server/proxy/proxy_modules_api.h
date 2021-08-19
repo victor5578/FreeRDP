@@ -24,9 +24,10 @@
 #include <freerdp/freerdp.h>
 #include <winpr/winpr.h>
 
-#include "../pf_context.h"
-
 #define MODULE_TAG(module) "proxy.modules." module
+
+typedef struct proxy_data proxyData;
+typedef struct proxy_module proxyModule;
 
 /* hook callback. should return TRUE on success or FALSE on error. */
 typedef BOOL (*proxyHookFn)(proxyData*);
@@ -74,7 +75,7 @@ typedef struct proxy_plugin
 typedef struct proxy_plugins_manager
 {
 	/* used for registering a fresh new proxy plugin. */
-	BOOL (*RegisterPlugin)(const proxyPlugin* plugin);
+	BOOL (*RegisterPlugin)(const proxyPlugin* plugin, proxyModule* module);
 
 	/* used for setting plugin's per-session info. */
 	BOOL (*SetPluginData)(const char*, proxyData*, void*);
@@ -86,7 +87,8 @@ typedef struct proxy_plugins_manager
 	void (*AbortConnect)(proxyData*);
 } proxyPluginsManager;
 
-typedef BOOL (*proxyModuleEntryPoint)(const proxyPluginsManager* plugins_manager);
+typedef BOOL (*proxyModuleEntryPoint)(const proxyPluginsManager* plugins_manager,
+                                      proxyModule* module);
 
 /* filter events parameters */
 #define WINPR_PACK_PUSH
@@ -143,7 +145,8 @@ extern "C"
 {
 #endif
 
-	FREERDP_API BOOL proxy_module_entry_point(const proxyPluginsManager* plugins_manager);
+	FREERDP_API BOOL proxy_module_entry_point(const proxyPluginsManager* plugins_manager,
+	                                          proxyModule* module);
 
 #ifdef __cplusplus
 };

@@ -31,6 +31,9 @@
 #include <freerdp/client/rdpgfx.h>
 #include <freerdp/client/disp.h>
 
+#include <freerdp/server/proxy/proxy_modules.h>
+#include <freerdp/server/proxy/proxy_log.h>
+
 #include "pf_channels.h"
 #include "pf_client.h"
 #include "pf_context.h"
@@ -38,8 +41,7 @@
 #include "pf_rdpgfx.h"
 #include "pf_cliprdr.h"
 #include "pf_disp.h"
-#include "pf_log.h"
-#include "pf_modules.h"
+
 #include "pf_rdpsnd.h"
 
 #define TAG PROXY_TAG("channels")
@@ -55,7 +57,7 @@ void pf_channels_on_client_channel_connect(void* data, ChannelConnectedEventArgs
 {
 	pClientContext* pc = (pClientContext*)data;
 	pServerContext* ps = pc->pdata->ps;
-	LOG_INFO(TAG, pc, "Channel connected: %s", e->name);
+	PROXY_LOG_INFO(TAG, pc, "Channel connected: %s", e->name);
 
 	if (strcmp(e->name, RDPEI_DVC_CHANNEL_NAME) == 0)
 	{
@@ -143,7 +145,7 @@ void pf_channels_on_client_channel_disconnect(void* data, ChannelDisconnectedEve
 	rdpContext* context = (rdpContext*)data;
 	pClientContext* pc = (pClientContext*)context;
 	pServerContext* ps = pc->pdata->ps;
-	LOG_INFO(TAG, pc, "Channel disconnected: %s", e->name);
+	PROXY_LOG_INFO(TAG, pc, "Channel disconnected: %s", e->name);
 
 	if (strcmp(e->name, RDPEI_DVC_CHANNEL_NAME) == 0)
 	{
@@ -193,7 +195,7 @@ BOOL pf_server_channels_init(pServerContext* ps)
 {
 	rdpContext* context = (rdpContext*)ps;
 	rdpContext* client = (rdpContext*)ps->pdata->pc;
-	proxyConfig* config = ps->pdata->config;
+	const proxyConfig* config = ps->pdata->config;
 
 	if (context->settings->SupportGraphicsPipeline && config->GFX)
 	{
@@ -246,8 +248,8 @@ BOOL pf_server_channels_init(pServerContext* ps)
 			ps->vc_handles[i] = WTSVirtualChannelOpen(ps->vcm, WTS_CURRENT_SESSION, channel_name);
 			if (!ps->vc_handles[i])
 			{
-				LOG_ERR(TAG, ps, "WTSVirtualChannelOpen failed for passthrough channel: %s",
-				        channel_name);
+				PROXY_LOG_ERR(TAG, ps, "WTSVirtualChannelOpen failed for passthrough channel: %s",
+				              channel_name);
 
 				return FALSE;
 			}
@@ -257,7 +259,7 @@ BOOL pf_server_channels_init(pServerContext* ps)
 		}
 	}
 
-	return pf_modules_run_hook(HOOK_TYPE_SERVER_CHANNELS_INIT, ps->pdata);
+	return pf_modules_run_hook(ps->pdata->module, HOOK_TYPE_SERVER_CHANNELS_INIT, ps->pdata);
 }
 
 void pf_server_channels_free(pServerContext* ps)
@@ -300,5 +302,5 @@ void pf_server_channels_free(pServerContext* ps)
 			WTSVirtualChannelClose(ps->vc_handles[i]);
 	}
 
-	pf_modules_run_hook(HOOK_TYPE_SERVER_CHANNELS_FREE, ps->pdata);
+	pf_modules_run_hook(ps->pdata->module, HOOK_TYPE_SERVER_CHANNELS_FREE, ps->pdata);
 }

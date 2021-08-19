@@ -47,12 +47,10 @@ set(${MODULE_PREFIX}_SRCS
   pf_graphics.c
   pf_graphics.h
   pf_modules.c
-  pf_modules.h
   pf_cliprdr.c
   pf_cliprdr.h
   pf_rdpsnd.c
   pf_rdpsnd.h
-  pf_log.h
   )
 
 set(PROXY_APP_SRCS freerdp_proxy.c)

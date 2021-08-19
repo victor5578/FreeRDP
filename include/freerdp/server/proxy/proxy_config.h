@@ -42,6 +42,12 @@ extern "C"
 	FREERDP_API void pf_server_config_print(const proxyConfig* config);
 	FREERDP_API void pf_server_config_free(proxyConfig* config);
 
+	FREERDP_API size_t pf_config_required_plugins_count(const proxyConfig* config);
+	FREERDP_API const char* pf_config_required_plugin(const proxyConfig* config, size_t index);
+
+	FREERDP_API size_t pf_config_modules_count(const proxyConfig* config);
+	FREERDP_API const char** pf_config_modules(const proxyConfig* config);
+
 #ifdef __cplusplus
 };
 #endif

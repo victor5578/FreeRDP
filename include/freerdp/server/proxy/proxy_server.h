@@ -22,6 +22,7 @@
 
 #include <freerdp/api.h>
 #include <freerdp/server/proxy/proxy_config.h>
+#include <freerdp/server/proxy/proxy_modules.h>
 
 typedef struct proxy_server proxyServer;
 
@@ -30,10 +31,12 @@ extern "C"
 {
 #endif
 
-	FREERDP_API proxyServer* pf_server_new(proxyConfig* config);
+	FREERDP_API proxyServer* pf_server_new(const proxyConfig* config, proxyModule* module);
+
 	FREERDP_API void pf_server_free(proxyServer* server);
 	FREERDP_API BOOL pf_server_start(proxyServer* server);
 	FREERDP_API void pf_server_stop(proxyServer* server);
+	FREERDP_API BOOL pf_server_run(proxyServer* server);
 
 #ifdef __cplusplus
 }

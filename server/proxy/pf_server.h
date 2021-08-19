@@ -25,11 +25,13 @@
 #include <winpr/collections.h>
 #include <freerdp/listener.h>
 
-#include "pf_config.h"
+#include <freerdp/server/proxy/proxy_config.h>
+#include <freerdp/server/proxy/proxy_modules.h>
 
 struct proxy_server
 {
-	proxyConfig* config;
+	proxyModule* module;
+	const proxyConfig* config;
 
 	freerdp_listener* listener;
 	wArrayList* clients;        /* maintain a list of active sessions, for stats */

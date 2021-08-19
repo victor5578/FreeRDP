@@ -21,7 +21,8 @@
 
 #include "pf_input.h"
 #include "pf_context.h"
-#include "pf_modules.h"
+
+#include <freerdp/server/proxy/proxy_modules.h>
 
 static BOOL pf_server_synchronize_event(rdpInput* input, UINT32 flags)
 {
@@ -34,7 +35,7 @@ static BOOL pf_server_keyboard_event(rdpInput* input, UINT16 flags, UINT16 code)
 {
 	pServerContext* ps = (pServerContext*)input->context;
 	pClientContext* pc = ps->pdata->pc;
-	proxyConfig* config = ps->pdata->config;
+	const proxyConfig* config = ps->pdata->config;
 	proxyKeyboardEventInfo event;
 
 	if (!config->Keyboard)
@@ -43,7 +44,7 @@ static BOOL pf_server_keyboard_event(rdpInput* input, UINT16 flags, UINT16 code)
 	event.flags = flags;
 	event.rdp_scan_code = code;
 
-	if (pf_modules_run_filter(FILTER_TYPE_KEYBOARD, pc->pdata, &event))
+	if (pf_modules_run_filter(pc->pdata->module, FILTER_TYPE_KEYBOARD, pc->pdata, &event))
 		return freerdp_input_send_keyboard_event(pc->context.input, flags, code);
 
 	return TRUE;
@@ -53,7 +54,7 @@ static BOOL pf_server_unicode_keyboard_event(rdpInput* input, UINT16 flags, UINT
 {
 	pServerContext* ps = (pServerContext*)input->context;
 	pClientContext* pc = ps->pdata->pc;
-	proxyConfig* config = ps->pdata->config;
+	const proxyConfig* config = ps->pdata->config;
 
 	if (!config->Keyboard)
 		return TRUE;
@@ -65,7 +66,7 @@ static BOOL pf_server_mouse_event(rdpInput* input, UINT16 flags, UINT16 x, UINT1
 {
 	pServerContext* ps = (pServerContext*)input->context;
 	pClientContext* pc = ps->pdata->pc;
-	proxyConfig* config = ps->pdata->config;
+	const proxyConfig* config = ps->pdata->config;
 	proxyMouseEventInfo event;
 
 	if (!config->Mouse)
@@ -75,7 +76,7 @@ static BOOL pf_server_mouse_event(rdpInput* input, UINT16 flags, UINT16 x, UINT1
 	event.x = x;
 	event.y = y;
 
-	if (pf_modules_run_filter(FILTER_TYPE_MOUSE, pc->pdata, &event))
+	if (pf_modules_run_filter(pc->pdata->module, FILTER_TYPE_MOUSE, pc->pdata, &event))
 		return freerdp_input_send_mouse_event(pc->context.input, flags, x, y);
 
 	return TRUE;
@@ -85,7 +86,7 @@ static BOOL pf_server_extended_mouse_event(rdpInput* input, UINT16 flags, UINT16
 {
 	pServerContext* ps = (pServerContext*)input->context;
 	pClientContext* pc = ps->pdata->pc;
-	proxyConfig* config = ps->pdata->config;
+	const proxyConfig* config = ps->pdata->config;
 
 	if (!config->Mouse)
 		return TRUE;

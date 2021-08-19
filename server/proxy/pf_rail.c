@@ -21,10 +21,10 @@
 
 #include <freerdp/client/rail.h>
 #include <freerdp/server/rail.h>
+#include <freerdp/server/proxy/proxy_log.h>
 
 #include "pf_rail.h"
 #include "pf_context.h"
-#include "pf_log.h"
 
 #define TAG PROXY_TAG("rail")
 

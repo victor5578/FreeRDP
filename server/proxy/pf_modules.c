@@ -26,16 +26,20 @@
 #include <freerdp/api.h>
 #include <freerdp/build-config.h>
 
-#include "pf_log.h"
-#include "pf_modules.h"
+#include <freerdp/server/proxy/proxy_modules.h>
+#include <freerdp/server/proxy/proxy_log.h>
+
 #include "pf_context.h"
 
 #define TAG PROXY_TAG("modules")
 
 #define MODULE_ENTRY_POINT "proxy_module_entry_point"
 
-static wArrayList* plugins_list = NULL; /* list of all loaded plugins */
-static wArrayList* handles_list = NULL; /* list of module handles to free at shutdown */
+struct proxy_module
+{
+	wArrayList* plugins;
+	wArrayList* handles;
+};
 
 static const char* FILTER_TYPE_STRINGS[] = { "KEYBOARD_EVENT", "MOUSE_EVENT", "CLIENT_CHANNEL_DATA",
 	                                         "SERVER_CHANNEL_DATA", "SERVER_FETCH_TARGET_ADDR" };
@@ -67,6 +71,8 @@ static BOOL pf_modules_proxy_ArrayList_ForEachFkt(void* data, size_t index, va_l
 	PF_HOOK_TYPE type;
 	proxyData* pdata;
 	BOOL ok = TRUE;
+
+	WINPR_UNUSED(index);
 
 	type = va_arg(ap, PF_HOOK_TYPE);
 	pdata = va_arg(ap, proxyData*);
@@ -127,9 +133,11 @@ static BOOL pf_modules_proxy_ArrayList_ForEachFkt(void* data, size_t index, va_l
  * @type: hook type to run.
  * @server: pointer of server's rdpContext struct of the current session.
  */
-BOOL pf_modules_run_hook(PF_HOOK_TYPE type, proxyData* pdata)
+BOOL pf_modules_run_hook(proxyModule* module, PF_HOOK_TYPE type, proxyData* pdata)
 {
-	return ArrayList_ForEach(plugins_list, pf_modules_proxy_ArrayList_ForEachFkt, type, pdata);
+	WINPR_ASSERT(module);
+	WINPR_ASSERT(module->plugins);
+	return ArrayList_ForEach(module->plugins, pf_modules_proxy_ArrayList_ForEachFkt, type, pdata);
 }
 
 static BOOL pf_modules_ArrayList_ForEachFkt(void* data, size_t index, va_list ap)
@@ -190,10 +198,12 @@ static BOOL pf_modules_ArrayList_ForEachFkt(void* data, size_t index, va_list ap
  * @type: filter type to run.
  * @server: pointer of server's rdpContext struct of the current session.
  */
-BOOL pf_modules_run_filter(PF_FILTER_TYPE type, proxyData* pdata, void* param)
+BOOL pf_modules_run_filter(proxyModule* module, PF_FILTER_TYPE type, proxyData* pdata, void* param)
 {
+	WINPR_ASSERT(module);
+	WINPR_ASSERT(module->plugins);
 
-	return ArrayList_ForEach(plugins_list, pf_modules_ArrayList_ForEachFkt, type, pdata, param);
+	return ArrayList_ForEach(module->plugins, pf_modules_ArrayList_ForEachFkt, type, pdata, param);
 }
 
 /*
@@ -266,17 +276,19 @@ static BOOL pf_modules_register_ArrayList_ForEachFkt(void* data, size_t index, v
 	return TRUE;
 }
 
-static BOOL pf_modules_register_plugin(const proxyPlugin* plugin_to_register)
+static BOOL pf_modules_register_plugin(const proxyPlugin* plugin_to_register, proxyModule* module)
 {
+	WINPR_ASSERT(module);
+
 	if (!plugin_to_register)
 		return FALSE;
 
 	/* make sure there's no other loaded plugin with the same name of `plugin_to_register`. */
-	if (!ArrayList_ForEach(plugins_list, pf_modules_register_ArrayList_ForEachFkt,
+	if (!ArrayList_ForEach(module->plugins, pf_modules_register_ArrayList_ForEachFkt,
 	                       plugin_to_register))
 		return FALSE;
 
-	if (!ArrayList_Append(plugins_list, plugin_to_register))
+	if (!ArrayList_Append(module->plugins, plugin_to_register))
 	{
 		WLog_ERR(TAG, "[%s]: failed adding plugin to list: %s", __FUNCTION__,
 		         plugin_to_register->name);
@@ -299,10 +311,10 @@ static BOOL pf_modules_load_ArrayList_ForEachFkt(void* data, size_t index, va_li
 	return FALSE;
 }
 
-BOOL pf_modules_is_plugin_loaded(const char* plugin_name)
+BOOL pf_modules_is_plugin_loaded(proxyModule* module, const char* plugin_name)
 {
-	WINPR_ASSERT(plugins_list);
-	return ArrayList_ForEach(plugins_list, pf_modules_load_ArrayList_ForEachFkt, plugin_name);
+	WINPR_ASSERT(module);
+	return ArrayList_ForEach(module->plugins, pf_modules_load_ArrayList_ForEachFkt, plugin_name);
 }
 
 static BOOL pf_modules_print_ArrayList_ForEachFkt(void* data, size_t index, va_list ap)
@@ -317,18 +329,19 @@ static BOOL pf_modules_print_ArrayList_ForEachFkt(void* data, size_t index, va_l
 	return TRUE;
 }
 
-void pf_modules_list_loaded_plugins(void)
+void pf_modules_list_loaded_plugins(proxyModule* module)
 {
 	size_t count;
 
-	WINPR_ASSERT(plugins_list);
+	WINPR_ASSERT(module);
+	WINPR_ASSERT(module->plugins);
 
-	count = ArrayList_Count(plugins_list);
+	count = ArrayList_Count(module->plugins);
 
 	if (count > 0)
 		WLog_INFO(TAG, "Loaded plugins:");
 
-	ArrayList_ForEach(plugins_list, pf_modules_print_ArrayList_ForEachFkt);
+	ArrayList_ForEach(module->plugins, pf_modules_print_ArrayList_ForEachFkt);
 }
 
 static const proxyPluginsManager plugins_manager = { pf_modules_register_plugin,
@@ -336,10 +349,12 @@ static const proxyPluginsManager plugins_manager = { pf_modules_register_plugin,
 	                                                 pf_modules_get_plugin_data,
 	                                                 pf_modules_abort_connect };
 
-static BOOL pf_modules_load_module(const char* module_path)
+static BOOL pf_modules_load_module(const char* module_path, proxyModule* module)
 {
 	HMODULE handle = NULL;
 	proxyModuleEntryPoint pEntryPoint;
+	WINPR_ASSERT(module);
+
 	handle = LoadLibraryA(module_path);
 
 	if (handle == NULL)
@@ -353,12 +368,12 @@ static BOOL pf_modules_load_module(const char* module_path)
 		WLog_ERR(TAG, "[%s]: GetProcAddress failed while loading %s", __FUNCTION__, module_path);
 		goto error;
 	}
-	if (!ArrayList_Append(handles_list, handle))
+	if (!ArrayList_Append(module->handles, handle))
 	{
 		WLog_ERR(TAG, "ArrayList_Append failed!");
 		goto error;
 	}
-	return pf_modules_add(pEntryPoint);
+	return pf_modules_add(module, pEntryPoint);
 
 error:
 	FreeLibrary(handle);
@@ -381,72 +396,73 @@ static void free_plugin(void* obj)
 		WLog_WARN(TAG, "PluginUnload failed for plugin '%s'", plugin->name);
 }
 
-BOOL pf_modules_init(const char* root_dir, const char** modules, size_t count)
+proxyModule* pf_modules_new(const char* root_dir, const char** modules, size_t count)
 {
 	size_t i;
+	proxyModule* module = calloc(1, sizeof(proxyModule));
+	if (!module)
+		return NULL;
 
-	if (!PathFileExistsA(root_dir))
+	module->plugins = ArrayList_New(FALSE);
+
+	if (module->plugins == NULL)
 	{
-		if (!CreateDirectoryA(root_dir, NULL))
+		WLog_ERR(TAG, "[%s]: ArrayList_New failed!", __FUNCTION__);
+		goto error;
+	}
+	ArrayList_Object(module->plugins)->fnObjectFree = free_plugin;
+
+	module->handles = ArrayList_New(FALSE);
+	if (module->handles == NULL)
+	{
+
+		WLog_ERR(TAG, "[%s]: ArrayList_New failed!", __FUNCTION__);
+		goto error;
+	}
+	ArrayList_Object(module->handles)->fnObjectFree = free_handle;
+
+	if (count > 0)
+	{
+		if (!PathFileExistsA(root_dir))
 		{
-			WLog_ERR(TAG, "error occurred while creating modules directory: %s", root_dir);
-			return FALSE;
+			if (!CreateDirectoryA(root_dir, NULL))
+			{
+				WLog_ERR(TAG, "error occurred while creating modules directory: %s", root_dir);
+				goto error;
+			}
 		}
 
-		return TRUE;
+		if (PathFileExistsA(root_dir))
+			WLog_DBG(TAG, "modules root directory: %s", root_dir);
+
+		for (i = 0; i < count; i++)
+		{
+			char* fullpath = GetCombinedPath(root_dir, modules[i]);
+			pf_modules_load_module(fullpath, module);
+			free(fullpath);
+		}
 	}
 
-	WLog_DBG(TAG, "modules root directory: %s", root_dir);
-
-	plugins_list = ArrayList_New(FALSE);
-
-	if (plugins_list == NULL)
-	{
-		WLog_ERR(TAG, "[%s]: ArrayList_New failed!", __FUNCTION__);
-		goto error;
-	}
-	ArrayList_Object(plugins_list)->fnObjectFree = free_plugin;
-
-	handles_list = ArrayList_New(FALSE);
-	if (handles_list == NULL)
-	{
-
-		WLog_ERR(TAG, "[%s]: ArrayList_New failed!", __FUNCTION__);
-		goto error;
-	}
-	ArrayList_Object(handles_list)->fnObjectFree = free_handle;
-
-	for (i = 0; i < count; i++)
-	{
-		char* fullpath = GetCombinedPath(root_dir, modules[i]);
-		pf_modules_load_module(fullpath);
-		free(fullpath);
-	}
-
-	return TRUE;
+	return module;
 
 error:
-	return FALSE;
+	pf_modules_free(module);
+	return NULL;
 }
 
-void pf_modules_free(void)
+void pf_modules_free(proxyModule* module)
 {
-	if (plugins_list)
-	{
-		ArrayList_Free(plugins_list);
-		plugins_list = NULL;
-	}
+	if (!module)
+		return;
 
-	if (handles_list)
-	{
-		ArrayList_Free(handles_list);
-		handles_list = NULL;
-	}
+	ArrayList_Free(module->plugins);
+	ArrayList_Free(module->handles);
 }
 
-BOOL pf_modules_add(proxyModuleEntryPoint ep)
+BOOL pf_modules_add(proxyModule* module, proxyModuleEntryPoint ep)
 {
+	WINPR_ASSERT(module);
 	WINPR_ASSERT(ep);
 
-	return ep(&plugins_manager);
+	return ep(&plugins_manager, module);
 }

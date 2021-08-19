@@ -25,8 +25,6 @@
 #include <winpr/ini.h>
 #include <winpr/path.h>
 
-typedef struct proxy_config proxyConfig;
-
 struct proxy_config
 {
 	/* server */

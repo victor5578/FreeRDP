@@ -30,10 +30,11 @@
 #include <freerdp/codec/color.h>
 #include <freerdp/codec/bitmap.h>
 #include <freerdp/freerdp.h>
-#include "pf_gdi.h"
-#include "pf_log.h"
 
-#include <freerdp/log.h>
+#include <freerdp/server/proxy/proxy_log.h>
+
+#include "pf_gdi.h"
+
 #define TAG PROXY_TAG("gdi")
 
 /* TODO: Figure how to use functions decleared in update.c */

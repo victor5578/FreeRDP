@@ -27,8 +27,9 @@
 
 #include <freerdp/codec/bitmap.h>
 
+#include <freerdp/server/proxy/proxy_log.h>
+
 #include "pf_graphics.h"
-#include "pf_log.h"
 #include "pf_gdi.h"
 #include "pf_context.h"
 

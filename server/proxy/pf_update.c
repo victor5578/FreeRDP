@@ -24,10 +24,11 @@
 #include <winpr/image.h>
 #include <winpr/sysinfo.h>
 
-#include "pf_modules.h"
+#include <freerdp/server/proxy/proxy_modules.h>
+#include <freerdp/server/proxy/proxy_log.h>
+
 #include "pf_update.h"
 #include "pf_context.h"
-#include "pf_log.h"
 
 #define TAG PROXY_TAG("update")
 
@@ -77,7 +78,7 @@ static BOOL pf_client_end_paint(rdpContext* context)
 	if (!ps->update->EndPaint(ps))
 		return FALSE;
 
-	if (!pf_modules_run_hook(HOOK_TYPE_CLIENT_END_PAINT, pdata))
+	if (!pf_modules_run_hook(pdata->module, HOOK_TYPE_CLIENT_END_PAINT, pdata))
 		return FALSE;
 
 	return TRUE;
@@ -187,8 +188,8 @@ static BOOL pf_client_save_session_info(rdpContext* context, UINT32 type, void* 
 		case INFO_TYPE_LOGON_LONG:
 		{
 			logonInfo = (logon_info*)data;
-			LOG_INFO(TAG, pc, "client logon info: Username: %s, Domain: %s", logonInfo->username,
-			         logonInfo->domain);
+			PROXY_LOG_INFO(TAG, pc, "client logon info: Username: %s, Domain: %s",
+			               logonInfo->username, logonInfo->domain);
 			break;
 		}
 

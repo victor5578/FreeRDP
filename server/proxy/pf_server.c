@@ -32,9 +32,10 @@
 #include <freerdp/channels/channels.h>
 
 #include <freerdp/server/proxy/proxy_server.h>
+#include <freerdp/server/proxy/proxy_modules.h>
+#include <freerdp/server/proxy/proxy_log.h>
 
 #include "pf_server.h"
-#include "pf_log.h"
 #include "pf_config.h"
 #include "pf_client.h"
 #include "pf_context.h"
@@ -43,7 +44,6 @@
 #include "pf_disp.h"
 #include "pf_rail.h"
 #include "pf_channels.h"
-#include "pf_modules.h"
 
 #define TAG PROXY_TAG("server")
 
@@ -66,7 +66,7 @@ static BOOL pf_server_parse_target_from_routing_token(rdpContext* context, char*
 
 	if ((routing_token_length <= prefix_len) || (routing_token_length >= TARGET_MAX))
 	{
-		LOG_ERR(TAG, ps, "invalid routing token length: %" PRIu32 "", routing_token_length);
+		PROXY_LOG_ERR(TAG, ps, "invalid routing token length: %" PRIu32 "", routing_token_length);
 		return FALSE;
 	}
 
@@ -99,7 +99,7 @@ static BOOL pf_server_parse_target_from_routing_token(rdpContext* context, char*
 }
 
 static BOOL pf_server_get_target_info(rdpContext* context, rdpSettings* settings,
-                                      proxyConfig* config)
+                                      const proxyConfig* config)
 {
 	pServerContext* ps = (pServerContext*)context;
 	proxyFetchTargetEventInfo ev = { 0 };
@@ -107,7 +107,8 @@ static BOOL pf_server_get_target_info(rdpContext* context, rdpSettings* settings
 	ev.fetch_method = config->FixedTarget ? PROXY_FETCH_TARGET_METHOD_CONFIG
 	                                      : PROXY_FETCH_TARGET_METHOD_LOAD_BALANCE_INFO;
 
-	if (!pf_modules_run_filter(FILTER_TYPE_SERVER_FETCH_TARGET_ADDR, ps->pdata, &ev))
+	if (!pf_modules_run_filter(ps->pdata->module, FILTER_TYPE_SERVER_FETCH_TARGET_ADDR, ps->pdata,
+	                           &ev))
 		return FALSE;
 
 	switch (ev.fetch_method)
@@ -124,7 +125,7 @@ static BOOL pf_server_get_target_info(rdpContext* context, rdpSettings* settings
 
 			if (!settings->ServerHostname)
 			{
-				LOG_ERR(TAG, ps, "strdup failed!");
+				PROXY_LOG_ERR(TAG, ps, "strdup failed!");
 				return FALSE;
 			}
 
@@ -141,7 +142,7 @@ static BOOL pf_server_get_target_info(rdpContext* context, rdpSettings* settings
 			settings->ServerHostname = _strdup(ev.target_address);
 			if (!settings->ServerHostname)
 			{
-				LOG_ERR(TAG, ps, "strdup failed!");
+				PROXY_LOG_ERR(TAG, ps, "strdup failed!");
 				return FALSE;
 			}
 
@@ -178,12 +179,12 @@ static BOOL pf_server_post_connect(freerdp_peer* peer)
 	ps = (pServerContext*)peer->context;
 	pdata = ps->pdata;
 
-	LOG_INFO(TAG, ps, "Accepted client: %s", peer->settings->ClientHostname);
+	PROXY_LOG_INFO(TAG, ps, "Accepted client: %s", peer->settings->ClientHostname);
 	accepted_channels = WTSGetAcceptedChannelNames(peer, &accepted_channels_count);
 	if (accepted_channels)
 	{
 		for (i = 0; i < accepted_channels_count; i++)
-			LOG_INFO(TAG, ps, "Accepted channel: %s", accepted_channels[i]);
+			PROXY_LOG_INFO(TAG, ps, "Accepted channel: %s", accepted_channels[i]);
 
 		free(accepted_channels);
 	}
@@ -191,7 +192,7 @@ static BOOL pf_server_post_connect(freerdp_peer* peer)
 	pc = pf_context_create_client_context(peer->settings);
 	if (pc == NULL)
 	{
-		LOG_ERR(TAG, ps, "failed to create client context!");
+		PROXY_LOG_ERR(TAG, ps, "failed to create client context!");
 		return FALSE;
 	}
 
@@ -202,26 +203,26 @@ static BOOL pf_server_post_connect(freerdp_peer* peer)
 
 	if (!pf_server_get_target_info(peer->context, client_settings, pdata->config))
 	{
-		LOG_INFO(TAG, ps, "pf_server_get_target_info failed!");
+		PROXY_LOG_INFO(TAG, ps, "pf_server_get_target_info failed!");
 		return FALSE;
 	}
 
-	LOG_INFO(TAG, ps, "remote target is %s:%" PRIu16 "", client_settings->ServerHostname,
-	         client_settings->ServerPort);
+	PROXY_LOG_INFO(TAG, ps, "remote target is %s:%" PRIu16 "", client_settings->ServerHostname,
+	               client_settings->ServerPort);
 
 	if (!pf_server_channels_init(ps))
 	{
-		LOG_INFO(TAG, ps, "failed to initialize server's channels!");
+		PROXY_LOG_INFO(TAG, ps, "failed to initialize server's channels!");
 		return FALSE;
 	}
 
-	if (!pf_modules_run_hook(HOOK_TYPE_SERVER_POST_CONNECT, pdata))
+	if (!pf_modules_run_hook(pdata->module, HOOK_TYPE_SERVER_POST_CONNECT, pdata))
 		return FALSE;
 
 	/* Start a proxy's client in it's own thread */
 	if (!(pdata->client_thread = CreateThread(NULL, 0, pf_client_start, pc, 0, NULL)))
 	{
-		LOG_ERR(TAG, ps, "failed to create client thread");
+		PROXY_LOG_ERR(TAG, ps, "failed to create client thread");
 		return FALSE;
 	}
 
@@ -247,7 +248,7 @@ static BOOL pf_server_receive_channel_data_hook(freerdp_peer* peer, UINT16 chann
 	pServerContext* ps = (pServerContext*)peer->context;
 	pClientContext* pc = ps->pdata->pc;
 	proxyData* pdata = ps->pdata;
-	proxyConfig* config = pdata->config;
+	const proxyConfig* config = pdata->config;
 	size_t i;
 	const char* channel_name = WTSChannelGetName(peer, channelId);
 
@@ -271,7 +272,8 @@ static BOOL pf_server_receive_channel_data_hook(freerdp_peer* peer, UINT16 chann
 			ev.data = data;
 			ev.data_len = size;
 
-			if (!pf_modules_run_filter(FILTER_TYPE_SERVER_PASSTHROUGH_CHANNEL_DATA, pdata, &ev))
+			if (!pf_modules_run_filter(pdata->module, FILTER_TYPE_SERVER_PASSTHROUGH_CHANNEL_DATA,
+			                           pdata, &ev))
 				return FALSE;
 
 			client_channel_id = (UINT64)HashTable_GetItemValue(pc->vc_ids, channel_name);
@@ -290,7 +292,7 @@ static BOOL pf_server_initialize_peer_connection(freerdp_peer* peer)
 	pServerContext* ps = (pServerContext*)peer->context;
 	rdpSettings* settings = peer->settings;
 	proxyData* pdata;
-	proxyConfig* config;
+	const proxyConfig* config;
 	proxyServer* server;
 
 	if (!ps)
@@ -303,6 +305,7 @@ static BOOL pf_server_initialize_peer_connection(freerdp_peer* peer)
 	proxy_data_set_server_context(pdata, ps);
 	server = (proxyServer*)peer->ContextExtra;
 
+	pdata->module = server->module;
 	config = pdata->config = server->config;
 
 	/* currently not supporting GDI orders */
@@ -385,8 +388,8 @@ static DWORD WINAPI pf_server_handle_peer(LPVOID arg)
 	pdata = ps->pdata;
 
 	client->Initialize(client);
-	LOG_INFO(TAG, ps, "new connection: proxy address: %s, client address: %s", pdata->config->Host,
-	         client->hostname);
+	PROXY_LOG_INFO(TAG, ps, "new connection: proxy address: %s, client address: %s",
+	               pdata->config->Host, client->hostname);
 	/* Main client event handling loop */
 	ChannelEvent = WTSVirtualChannelManagerGetEventHandle(ps->vcm);
 
@@ -464,15 +467,14 @@ static DWORD WINAPI pf_server_handle_peer(LPVOID arg)
 fail:
 
 	pc = (rdpContext*)pdata->pc;
-	LOG_INFO(TAG, ps, "starting shutdown of connection");
-	LOG_INFO(TAG, ps, "stopping proxy's client");
+	PROXY_LOG_INFO(TAG, ps, "starting shutdown of connection");
+	PROXY_LOG_INFO(TAG, ps, "stopping proxy's client");
 	freerdp_client_stop(pc);
-	pf_modules_run_hook(HOOK_TYPE_SERVER_SESSION_END, pdata);
-	LOG_INFO(TAG, ps, "freeing server's channels");
+	pf_modules_run_hook(pdata->module, HOOK_TYPE_SERVER_SESSION_END, pdata);
+	PROXY_LOG_INFO(TAG, ps, "freeing server's channels");
 	pf_server_channels_free(ps);
-	LOG_INFO(TAG, ps, "freeing proxy data");
-    ArrayList_Remove(server->clients, pdata);
-    pf_server_config_free(server->config);
+	PROXY_LOG_INFO(TAG, ps, "freeing proxy data");
+	ArrayList_Remove(server->clients, pdata);
 	proxy_data_free(pdata);
 	freerdp_client_context_free(pc);
 	client->Close(client);
@@ -583,7 +585,7 @@ static void pf_server_clients_list_client_free(void* obj)
 	proxy_data_abort_connect(pdata);
 }
 
-proxyServer* pf_server_new(proxyConfig* config)
+proxyServer* pf_server_new(const proxyConfig* config, proxyModule* module)
 {
 	wObject* obj;
 	proxyServer* server;
@@ -596,6 +598,7 @@ proxyServer* pf_server_new(proxyConfig* config)
 		return NULL;
 
 	server->config = config;
+	server->module = module;
 
 	server->stopEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	if (!server->stopEvent)
@@ -623,6 +626,15 @@ proxyServer* pf_server_new(proxyConfig* config)
 out:
 	pf_server_free(server);
 	return NULL;
+}
+
+BOOL pf_server_run(proxyServer* server)
+{
+	WINPR_ASSERT(server);
+
+	if (WaitForSingleObject(server->thread, INFINITE) != WAIT_OBJECT_0)
+		return FALSE;
+	return TRUE;
 }
 
 void pf_server_stop(proxyServer* server)

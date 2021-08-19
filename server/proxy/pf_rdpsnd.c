@@ -23,8 +23,8 @@
 #include <freerdp/server/rdpsnd.h>
 #include <freerdp/server/server-common.h>
 
+#include <freerdp/server/proxy/proxy_log.h>
 #include "pf_rdpsnd.h"
-#include "pf_log.h"
 
 #define TAG PROXY_TAG("rdpsnd")
 

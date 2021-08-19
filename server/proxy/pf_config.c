@@ -24,12 +24,11 @@
 #include <winpr/collections.h>
 #include <winpr/cmdline.h>
 
-#include "pf_log.h"
 #include "pf_server.h"
 #include "pf_config.h"
-#include "pf_modules.h"
 
 #include <freerdp/server/proxy/proxy_config.h>
+#include <freerdp/server/proxy/proxy_log.h>
 
 #define TAG PROXY_TAG("config")
 
@@ -179,7 +178,8 @@ static BOOL pf_config_load_channels(wIniFile* ini, proxyConfig* config)
 
 		for (i = 0; i < config->PassthroughCount; i++)
 		{
-			if (strlen(config->Passthrough[i]) > CHANNEL_NAME_LEN)
+			const char* name = config->Passthrough[i];
+			if (strlen(name) > CHANNEL_NAME_LEN)
 			{
 				WLog_ERR(TAG, "passthrough channel: %s: name too long!", config->Passthrough[i]);
 				return FALSE;
@@ -395,4 +395,31 @@ void pf_server_config_free(proxyConfig* config)
 	free(config->TargetHost);
 	free(config->Host);
 	free(config);
+}
+
+size_t pf_config_required_plugins_count(const proxyConfig* config)
+{
+	WINPR_ASSERT(config);
+	return config->RequiredPluginsCount;
+}
+
+const char* pf_config_required_plugin(const proxyConfig* config, size_t index)
+{
+	WINPR_ASSERT(config);
+	if (index >= config->RequiredPluginsCount)
+		return NULL;
+
+	return config->RequiredPlugins[index];
+}
+
+size_t pf_config_modules_count(const proxyConfig* config)
+{
+	WINPR_ASSERT(config);
+	return config->ModulesCount;
+}
+
+const char** pf_config_modules(const proxyConfig* config)
+{
+	WINPR_ASSERT(config);
+	return config->Modules;
 }

@@ -47,7 +47,7 @@ static BOOL client_to_proxy_context_new(freerdp_peer* client, rdpContext* ctx)
 {
 	pServerContext* context = (pServerContext*)ctx;
 	proxyServer* server = (proxyServer*)client->ContextExtra;
-	proxyConfig* config = server->config;
+	const proxyConfig* config = server->config;
 
 	context->dynvcReady = NULL;
 

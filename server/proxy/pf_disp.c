@@ -18,9 +18,9 @@
  */
 
 #include <freerdp/server/disp.h>
+#include <freerdp/server/proxy/proxy_log.h>
 
 #include "pf_disp.h"
-#include "pf_log.h"
 
 #define TAG PROXY_TAG("disp")
 

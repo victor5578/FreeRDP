@@ -19,7 +19,7 @@
 
 #include <iostream>
 
-#include "modules_api.h"
+#include <freerdp/server/proxy/proxy_modules_api.h>
 
 #define TAG MODULE_TAG("demo")
 
@@ -69,9 +69,9 @@ static proxyPlugin demo_plugin = {
 	NULL                        /* ServerFetchTargetAddr */
 };
 
-BOOL proxy_module_entry_point(const proxyPluginsManager* plugins_manager)
+BOOL proxy_module_entry_point(const proxyPluginsManager* plugins_manager, proxyModule* module)
 {
 	g_plugins_manager = plugins_manager;
 
-	return plugins_manager->RegisterPlugin(&demo_plugin);
+	return plugins_manager->RegisterPlugin(&demo_plugin, module);
 }

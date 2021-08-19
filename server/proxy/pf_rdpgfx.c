@@ -21,12 +21,12 @@
 
 #include <freerdp/client/rdpgfx.h>
 #include <freerdp/server/rdpgfx.h>
+#include <freerdp/server/proxy/proxy_log.h>
 
 #include <winpr/synch.h>
 
 #include "pf_rdpgfx.h"
 #include "pf_context.h"
-#include "pf_log.h"
 
 #define TAG PROXY_TAG("gfx")
 
@@ -49,7 +49,7 @@ static UINT pf_rdpgfx_reset_graphics(RdpgfxClientContext* context,
 {
 	UINT error;
 	proxyData* pdata = (proxyData*)context->custom;
-	proxyConfig* config = pdata->config;
+	const proxyConfig* config = pdata->config;
 	RdpgfxServerContext* server = (RdpgfxServerContext*)pdata->ps->gfx;
 	RdpgfxClientContext* gfx_decoder = pdata->pc->gfx_decoder;
 	WLog_VRB(TAG, __FUNCTION__);
@@ -68,7 +68,7 @@ static UINT pf_rdpgfx_start_frame(RdpgfxClientContext* context,
 {
 	UINT error;
 	proxyData* pdata = (proxyData*)context->custom;
-	proxyConfig* config = pdata->config;
+	const proxyConfig* config = pdata->config;
 	RdpgfxServerContext* server = (RdpgfxServerContext*)pdata->ps->gfx;
 	RdpgfxClientContext* gfx_decoder = pdata->pc->gfx_decoder;
 	WLog_VRB(TAG, __FUNCTION__);
@@ -86,7 +86,7 @@ static UINT pf_rdpgfx_end_frame(RdpgfxClientContext* context, const RDPGFX_END_F
 {
 	UINT error;
 	proxyData* pdata = (proxyData*)context->custom;
-	proxyConfig* config = pdata->config;
+	const proxyConfig* config = pdata->config;
 	RdpgfxServerContext* server = (RdpgfxServerContext*)pdata->ps->gfx;
 	RdpgfxClientContext* gfx_decoder = pdata->pc->gfx_decoder;
 	WLog_VRB(TAG, __FUNCTION__);
@@ -105,7 +105,7 @@ static UINT pf_rdpgfx_surface_command(RdpgfxClientContext* context,
 {
 	UINT error;
 	proxyData* pdata = (proxyData*)context->custom;
-	proxyConfig* config = pdata->config;
+	const proxyConfig* config = pdata->config;
 	RdpgfxServerContext* server = (RdpgfxServerContext*)pdata->ps->gfx;
 	RdpgfxClientContext* gfx_decoder = pdata->pc->gfx_decoder;
 	WLog_VRB(TAG, __FUNCTION__);
@@ -125,7 +125,7 @@ pf_rdpgfx_delete_encoding_context(RdpgfxClientContext* context,
 {
 	UINT error;
 	proxyData* pdata = (proxyData*)context->custom;
-	proxyConfig* config = pdata->config;
+	const proxyConfig* config = pdata->config;
 	RdpgfxServerContext* server = (RdpgfxServerContext*)pdata->ps->gfx;
 	RdpgfxClientContext* gfx_decoder = pdata->pc->gfx_decoder;
 	WLog_VRB(TAG, __FUNCTION__);
@@ -144,7 +144,7 @@ static UINT pf_rdpgfx_create_surface(RdpgfxClientContext* context,
 {
 	UINT error;
 	proxyData* pdata = (proxyData*)context->custom;
-	proxyConfig* config = pdata->config;
+	const proxyConfig* config = pdata->config;
 	RdpgfxServerContext* server = (RdpgfxServerContext*)pdata->ps->gfx;
 	RdpgfxClientContext* gfx_decoder = pdata->pc->gfx_decoder;
 	WLog_VRB(TAG, __FUNCTION__);
@@ -163,7 +163,7 @@ static UINT pf_rdpgfx_delete_surface(RdpgfxClientContext* context,
 {
 	UINT error;
 	proxyData* pdata = (proxyData*)context->custom;
-	proxyConfig* config = pdata->config;
+	const proxyConfig* config = pdata->config;
 	RdpgfxServerContext* server = (RdpgfxServerContext*)pdata->ps->gfx;
 	RdpgfxClientContext* gfx_decoder = pdata->pc->gfx_decoder;
 	WLog_VRB(TAG, __FUNCTION__);
@@ -182,7 +182,7 @@ static UINT pf_rdpgfx_solid_fill(RdpgfxClientContext* context,
 {
 	UINT error;
 	proxyData* pdata = (proxyData*)context->custom;
-	proxyConfig* config = pdata->config;
+	const proxyConfig* config = pdata->config;
 	RdpgfxServerContext* server = (RdpgfxServerContext*)pdata->ps->gfx;
 	RdpgfxClientContext* gfx_decoder = pdata->pc->gfx_decoder;
 	WLog_VRB(TAG, __FUNCTION__);
@@ -201,7 +201,7 @@ static UINT pf_rdpgfx_surface_to_surface(RdpgfxClientContext* context,
 {
 	UINT error;
 	proxyData* pdata = (proxyData*)context->custom;
-	proxyConfig* config = pdata->config;
+	const proxyConfig* config = pdata->config;
 	RdpgfxServerContext* server = (RdpgfxServerContext*)pdata->ps->gfx;
 	RdpgfxClientContext* gfx_decoder = pdata->pc->gfx_decoder;
 	WLog_VRB(TAG, __FUNCTION__);
@@ -220,7 +220,7 @@ static UINT pf_rdpgfx_surface_to_cache(RdpgfxClientContext* context,
 {
 	UINT error;
 	proxyData* pdata = (proxyData*)context->custom;
-	proxyConfig* config = pdata->config;
+	const proxyConfig* config = pdata->config;
 	RdpgfxServerContext* server = (RdpgfxServerContext*)pdata->ps->gfx;
 	RdpgfxClientContext* gfx_decoder = pdata->pc->gfx_decoder;
 	WLog_VRB(TAG, __FUNCTION__);
@@ -239,7 +239,7 @@ static UINT pf_rdpgfx_cache_to_surface(RdpgfxClientContext* context,
 {
 	UINT error;
 	proxyData* pdata = (proxyData*)context->custom;
-	proxyConfig* config = pdata->config;
+	const proxyConfig* config = pdata->config;
 	RdpgfxServerContext* server = (RdpgfxServerContext*)pdata->ps->gfx;
 	RdpgfxClientContext* gfx_decoder = pdata->pc->gfx_decoder;
 	WLog_VRB(TAG, __FUNCTION__);
@@ -267,7 +267,7 @@ static UINT pf_rdpgfx_evict_cache_entry(RdpgfxClientContext* context,
 {
 	UINT error;
 	proxyData* pdata = (proxyData*)context->custom;
-	proxyConfig* config = pdata->config;
+	const proxyConfig* config = pdata->config;
 	RdpgfxServerContext* server = (RdpgfxServerContext*)pdata->ps->gfx;
 	RdpgfxClientContext* gfx_decoder = pdata->pc->gfx_decoder;
 	WLog_VRB(TAG, __FUNCTION__);
@@ -286,7 +286,7 @@ static UINT pf_rdpgfx_map_surface_to_output(RdpgfxClientContext* context,
 {
 	UINT error;
 	proxyData* pdata = (proxyData*)context->custom;
-	proxyConfig* config = pdata->config;
+	const proxyConfig* config = pdata->config;
 	RdpgfxServerContext* server = (RdpgfxServerContext*)pdata->ps->gfx;
 	RdpgfxClientContext* gfx_decoder = pdata->pc->gfx_decoder;
 	WLog_VRB(TAG, __FUNCTION__);
@@ -305,7 +305,7 @@ static UINT pf_rdpgfx_map_surface_to_window(RdpgfxClientContext* context,
 {
 	UINT error;
 	proxyData* pdata = (proxyData*)context->custom;
-	proxyConfig* config = pdata->config;
+	const proxyConfig* config = pdata->config;
 	RdpgfxServerContext* server = (RdpgfxServerContext*)pdata->ps->gfx;
 	RdpgfxClientContext* gfx_decoder = pdata->pc->gfx_decoder;
 	WLog_VRB(TAG, __FUNCTION__);
@@ -325,7 +325,7 @@ static UINT pf_rdpgfx_map_surface_to_scaled_window(
 {
 	UINT error;
 	proxyData* pdata = (proxyData*)context->custom;
-	proxyConfig* config = pdata->config;
+	const proxyConfig* config = pdata->config;
 	RdpgfxServerContext* server = (RdpgfxServerContext*)pdata->ps->gfx;
 	RdpgfxClientContext* gfx_decoder = pdata->pc->gfx_decoder;
 	WLog_VRB(TAG, __FUNCTION__);
@@ -345,7 +345,7 @@ static UINT pf_rdpgfx_map_surface_to_scaled_output(
 {
 	UINT error;
 	proxyData* pdata = (proxyData*)context->custom;
-	proxyConfig* config = pdata->config;
+	const proxyConfig* config = pdata->config;
 	RdpgfxServerContext* server = (RdpgfxServerContext*)pdata->ps->gfx;
 	RdpgfxClientContext* gfx_decoder = pdata->pc->gfx_decoder;
 	WLog_VRB(TAG, __FUNCTION__);

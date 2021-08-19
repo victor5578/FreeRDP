@@ -27,8 +27,9 @@
 #include <freerdp/gdi/gdi.h>
 #include <winpr/winsock.h>
 
-#include "pf_log.h"
-#include "modules_api.h"
+#include <freerdp/server/proxy/proxy_modules_api.h>
+#include <freerdp/server/proxy/proxy_log.h>
+
 #include "pf_context.h"
 #include "cap_config.h"
 #include "cap_protocol.h"
@@ -36,7 +37,7 @@
 #define BUFSIZE 8092
 
 static const proxyPluginsManager* g_plugins_manager = NULL;
-static captureConfig config = { 0 };
+static captureConfig cconfig = { 0 };
 
 static SOCKET capture_plugin_init_socket(void)
 {
@@ -49,8 +50,8 @@ static SOCKET capture_plugin_init_socket(void)
 		return -1;
 
 	addr.sin_family = AF_INET;
-	addr.sin_port = htons(config.port);
-	inet_pton(AF_INET, config.host, &(addr.sin_addr));
+	addr.sin_port = htons(cconfig.port);
+	inet_pton(AF_INET, cconfig.host, &(addr.sin_addr));
 
 	status = _connect(sockfd, (const struct sockaddr*)&addr, sizeof(addr));
 	if (status < 0)
@@ -229,7 +230,7 @@ static BOOL capture_plugin_client_post_connect(proxyData* pdata)
 static BOOL capture_plugin_server_post_connect(proxyData* pdata)
 {
 	pServerContext* ps = pdata->ps;
-	proxyConfig* config = pdata->config;
+	const proxyConfig* config = pdata->config;
 	rdpSettings* settings = ps->context.settings;
 
 	if (!config->GFX || !config->DecodeGFX)
@@ -250,7 +251,7 @@ static BOOL capture_plugin_server_post_connect(proxyData* pdata)
 
 static BOOL capture_plugin_unload(void)
 {
-	capture_plugin_config_free_internal(&config);
+	capture_plugin_config_free_internal(&cconfig);
 	return TRUE;
 }
 
@@ -273,16 +274,16 @@ static proxyPlugin demo_plugin = {
 	NULL                                /* ServerFetchTargetAddr */
 };
 
-BOOL proxy_module_entry_point(const proxyPluginsManager* plugins_manager)
+BOOL proxy_module_entry_point(const proxyPluginsManager* plugins_manager, proxyModule* module)
 {
 	g_plugins_manager = plugins_manager;
 
-	if (!capture_plugin_init_config(&config))
+	if (!capture_plugin_init_config(&cconfig))
 	{
 		WLog_ERR(TAG, "failed to load config");
 		return FALSE;
 	}
 
-	WLog_INFO(TAG, "host: %s, port: %" PRIu16 "", config.host, config.port);
-	return plugins_manager->RegisterPlugin(&demo_plugin);
+	WLog_INFO(TAG, "host: %s, port: %" PRIu16 "", cconfig.host, cconfig.port);
+	return plugins_manager->RegisterPlugin(&demo_plugin, module);
 }

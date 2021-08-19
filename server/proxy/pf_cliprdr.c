@@ -18,8 +18,9 @@
  * limitations under the License.
  */
 
+#include <freerdp/server/proxy/proxy_log.h>
+
 #include "pf_cliprdr.h"
-#include "pf_log.h"
 
 #define TAG PROXY_TAG("cliprdr")
 #define TEXT_FORMATS_COUNT 2
@@ -77,7 +78,7 @@ static INLINE void pf_cliprdr_create_text_only_format_list(CLIPRDR_FORMAT_LIST* 
  * pf_cliprdr_is_copy_paste_valid returns TRUE if the length of the copied
  * text is valid according to the configuration value of `MaxTextLength`.
  */
-static BOOL pf_cliprdr_is_copy_paste_valid(proxyConfig* config,
+static BOOL pf_cliprdr_is_copy_paste_valid(const proxyConfig* config,
                                            const CLIPRDR_FORMAT_DATA_RESPONSE* pdu, UINT32 format)
 {
 	size_t copy_len;
