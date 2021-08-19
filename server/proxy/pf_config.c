@@ -331,7 +331,7 @@ static void pf_server_config_print_list(char** list, size_t count)
 		WLog_INFO(TAG, "\t\t- %s", list[i]);
 }
 
-void pf_server_config_print(proxyConfig* config)
+void pf_server_config_print(const proxyConfig* config)
 {
 	WLog_INFO(TAG, "Proxy configuration:");
 
