@@ -37,8 +37,6 @@
 static wArrayList* plugins_list = NULL; /* list of all loaded plugins */
 static wArrayList* handles_list = NULL; /* list of module handles to free at shutdown */
 
-typedef BOOL (*moduleEntryPoint)(proxyPluginsManager* plugins_manager);
-
 static const char* FILTER_TYPE_STRINGS[] = { "KEYBOARD_EVENT", "MOUSE_EVENT", "CLIENT_CHANNEL_DATA",
 	                                         "SERVER_CHANNEL_DATA", "SERVER_FETCH_TARGET_ADDR" };
 
@@ -268,7 +266,7 @@ static BOOL pf_modules_register_ArrayList_ForEachFkt(void* data, size_t index, v
 	return TRUE;
 }
 
-static BOOL pf_modules_register_plugin(proxyPlugin* plugin_to_register)
+static BOOL pf_modules_register_plugin(const proxyPlugin* plugin_to_register)
 {
 	if (!plugin_to_register)
 		return FALSE;
@@ -303,9 +301,7 @@ static BOOL pf_modules_load_ArrayList_ForEachFkt(void* data, size_t index, va_li
 
 BOOL pf_modules_is_plugin_loaded(const char* plugin_name)
 {
-	if (plugins_list == NULL)
-		return FALSE;
-
+	WINPR_ASSERT(plugins_list);
 	return ArrayList_ForEach(plugins_list, pf_modules_load_ArrayList_ForEachFkt, plugin_name);
 }
 
@@ -325,10 +321,9 @@ void pf_modules_list_loaded_plugins(void)
 {
 	size_t count;
 
-	if (plugins_list == NULL)
-		return;
+	WINPR_ASSERT(plugins_list);
 
-	count = (size_t)ArrayList_Count(plugins_list);
+	count = ArrayList_Count(plugins_list);
 
 	if (count > 0)
 		WLog_INFO(TAG, "Loaded plugins:");
@@ -336,15 +331,15 @@ void pf_modules_list_loaded_plugins(void)
 	ArrayList_ForEach(plugins_list, pf_modules_print_ArrayList_ForEachFkt);
 }
 
-static proxyPluginsManager plugins_manager = { pf_modules_register_plugin,
-	                                           pf_modules_set_plugin_data,
-	                                           pf_modules_get_plugin_data,
-	                                           pf_modules_abort_connect };
+static const proxyPluginsManager plugins_manager = { pf_modules_register_plugin,
+	                                                 pf_modules_set_plugin_data,
+	                                                 pf_modules_get_plugin_data,
+	                                                 pf_modules_abort_connect };
 
 static BOOL pf_modules_load_module(const char* module_path)
 {
 	HMODULE handle = NULL;
-	moduleEntryPoint pEntryPoint;
+	proxyModuleEntryPoint pEntryPoint;
 	handle = LoadLibraryA(module_path);
 
 	if (handle == NULL)
@@ -353,30 +348,37 @@ static BOOL pf_modules_load_module(const char* module_path)
 		return FALSE;
 	}
 
-	if (!(pEntryPoint = (moduleEntryPoint)GetProcAddress(handle, MODULE_ENTRY_POINT)))
+	if (!(pEntryPoint = (proxyModuleEntryPoint)GetProcAddress(handle, MODULE_ENTRY_POINT)))
 	{
 		WLog_ERR(TAG, "[%s]: GetProcAddress failed while loading %s", __FUNCTION__, module_path);
 		goto error;
 	}
-
-	if (!pEntryPoint(&plugins_manager))
-	{
-		WLog_ERR(TAG, "[%s]: module %s entry point failed!", __FUNCTION__, module_path);
-		goto error;
-	}
-
-	/* save module handle for freeing the module later */
 	if (!ArrayList_Append(handles_list, handle))
 	{
 		WLog_ERR(TAG, "ArrayList_Append failed!");
-		return FALSE;
+		goto error;
 	}
-
-	return TRUE;
+	return pf_modules_add(pEntryPoint);
 
 error:
 	FreeLibrary(handle);
 	return FALSE;
+}
+
+static void free_handle(void* obj)
+{
+	HANDLE handle = (HANDLE)obj;
+	if (handle)
+		FreeLibrary(handle);
+}
+
+static void free_plugin(void* obj)
+{
+	proxyPlugin* plugin = (proxyPlugin*)obj;
+	WINPR_ASSERT(plugin);
+
+	if (!IFCALLRESULT(TRUE, plugin->PluginUnload))
+		WLog_WARN(TAG, "PluginUnload failed for plugin '%s'", plugin->name);
 }
 
 BOOL pf_modules_init(const char* root_dir, const char** modules, size_t count)
@@ -403,6 +405,7 @@ BOOL pf_modules_init(const char* root_dir, const char** modules, size_t count)
 		WLog_ERR(TAG, "[%s]: ArrayList_New failed!", __FUNCTION__);
 		goto error;
 	}
+	ArrayList_Object(plugins_list)->fnObjectFree = free_plugin;
 
 	handles_list = ArrayList_New(FALSE);
 	if (handles_list == NULL)
@@ -411,6 +414,7 @@ BOOL pf_modules_init(const char* root_dir, const char** modules, size_t count)
 		WLog_ERR(TAG, "[%s]: ArrayList_New failed!", __FUNCTION__);
 		goto error;
 	}
+	ArrayList_Object(handles_list)->fnObjectFree = free_handle;
 
 	for (i = 0; i < count; i++)
 	{
@@ -422,49 +426,27 @@ BOOL pf_modules_init(const char* root_dir, const char** modules, size_t count)
 	return TRUE;
 
 error:
-	ArrayList_Free(plugins_list);
-	plugins_list = NULL;
-	ArrayList_Free(handles_list);
-	handles_list = NULL;
 	return FALSE;
-}
-
-static BOOL pf_modules_free_ArrayList_ForEachFkt(void* data, size_t index, va_list ap)
-{
-	proxyPlugin* plugin = (proxyPlugin*)data;
-
-	WINPR_UNUSED(index);
-	WINPR_UNUSED(ap);
-
-	if (!IFCALLRESULT(TRUE, plugin->PluginUnload))
-		WLog_WARN(TAG, "PluginUnload failed for plugin '%s'", plugin->name);
-	return TRUE;
-}
-
-static BOOL pf_modules_free_handles_ArrayList_ForEachFkt(void* data, size_t index, va_list ap)
-{
-	HANDLE handle = (HANDLE)data;
-
-	WINPR_UNUSED(index);
-	WINPR_UNUSED(ap);
-	if (handle)
-		FreeLibrary(handle);
-	return TRUE;
 }
 
 void pf_modules_free(void)
 {
 	if (plugins_list)
 	{
-		ArrayList_ForEach(plugins_list, pf_modules_free_ArrayList_ForEachFkt);
 		ArrayList_Free(plugins_list);
 		plugins_list = NULL;
 	}
 
 	if (handles_list)
 	{
-		ArrayList_ForEach(handles_list, pf_modules_free_handles_ArrayList_ForEachFkt);
 		ArrayList_Free(handles_list);
 		handles_list = NULL;
 	}
+}
+
+BOOL pf_modules_add(proxyModuleEntryPoint ep)
+{
+	WINPR_ASSERT(ep);
+
+	return ep(&plugins_manager);
 }

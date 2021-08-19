@@ -26,7 +26,7 @@
 static constexpr char plugin_name[] = "demo";
 static constexpr char plugin_desc[] = "this is a test plugin";
 
-static proxyPluginsManager* g_plugins_manager = NULL;
+static const proxyPluginsManager* g_plugins_manager = NULL;
 
 static BOOL demo_filter_keyboard_event(proxyData* pdata, void* param)
 {
@@ -69,7 +69,7 @@ static proxyPlugin demo_plugin = {
 	NULL                        /* ServerFetchTargetAddr */
 };
 
-BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager)
+BOOL proxy_module_entry_point(const proxyPluginsManager* plugins_manager)
 {
 	g_plugins_manager = plugins_manager;
 

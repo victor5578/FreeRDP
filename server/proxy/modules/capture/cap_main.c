@@ -35,7 +35,7 @@
 
 #define BUFSIZE 8092
 
-static proxyPluginsManager* g_plugins_manager = NULL;
+static const proxyPluginsManager* g_plugins_manager = NULL;
 static captureConfig config = { 0 };
 
 static SOCKET capture_plugin_init_socket(void)
@@ -273,7 +273,7 @@ static proxyPlugin demo_plugin = {
 	NULL                                /* ServerFetchTargetAddr */
 };
 
-BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager)
+BOOL proxy_module_entry_point(const proxyPluginsManager* plugins_manager)
 {
 	g_plugins_manager = plugins_manager;
 

@@ -74,7 +74,7 @@ typedef struct proxy_plugin
 typedef struct proxy_plugins_manager
 {
 	/* used for registering a fresh new proxy plugin. */
-	BOOL (*RegisterPlugin)(proxyPlugin* plugin);
+	BOOL (*RegisterPlugin)(const proxyPlugin* plugin);
 
 	/* used for setting plugin's per-session info. */
 	BOOL (*SetPluginData)(const char*, proxyData*, void*);
@@ -85,6 +85,8 @@ typedef struct proxy_plugins_manager
 	/* used for aborting a session. */
 	void (*AbortConnect)(proxyData*);
 } proxyPluginsManager;
+
+typedef BOOL (*proxyModuleEntryPoint)(const proxyPluginsManager* plugins_manager);
 
 /* filter events parameters */
 #define WINPR_PACK_PUSH
@@ -141,7 +143,7 @@ extern "C"
 {
 #endif
 
-	FREERDP_API BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager);
+	FREERDP_API BOOL proxy_module_entry_point(const proxyPluginsManager* plugins_manager);
 
 #ifdef __cplusplus
 };
