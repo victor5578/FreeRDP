@@ -18,11 +18,10 @@
 # limitations under the License.
 
 include(CMakeDependentOption)
-set(MODULE_NAME "freerdp-proxy")
+set(MODULE_NAME "freerdp-server-proxy")
 set(MODULE_PREFIX "FREERDP_SERVER_PROXY")
 
 set(${MODULE_PREFIX}_SRCS
-  freerdp_proxy.c
   pf_context.c
   pf_context.h
   pf_channels.c
@@ -56,6 +55,8 @@ set(${MODULE_PREFIX}_SRCS
   pf_log.h
   )
 
+set(PROXY_APP_SRCS freerdp_proxy.c)
+
 # On windows create dll version information.
 # Vendor, product and year are already set in top level CMakeLists.txt
 if (WIN32)
@@ -70,9 +71,15 @@ if (WIN32)
     @ONLY)
 
   set ( ${MODULE_PREFIX}_SRCS ${${MODULE_PREFIX}_SRCS} ${CMAKE_CURRENT_BINARY_DIR}/version.rc)
+  list(APPEND PROXY_APP_SRCS ${CMAKE_CURRENT_BINARY_DIR}/version.rc)
 endif()
 
-add_executable(${MODULE_NAME} ${${MODULE_PREFIX}_SRCS})
+add_library(${MODULE_NAME} ${${MODULE_PREFIX}_SRCS})
+set_target_properties(${MODULE_NAME} PROPERTIES OUTPUT_NAME ${MODULE_NAME}${FREERDP_API_VERSION})
+
+if (WITH_LIBRARY_VERSIONING)
+  set_target_properties(${MODULE_NAME} PROPERTIES VERSION ${FREERDP_VERSION} SOVERSION ${FREERDP_API_VERSION})
+endif()
 
 set(${MODULE_PREFIX}_LIBS ${${MODULE_PREFIX}_LIBS} freerdp-server)
 set(${MODULE_PREFIX}_LIBS ${${MODULE_PREFIX}_LIBS} freerdp-client)
@@ -80,14 +87,29 @@ set(${MODULE_PREFIX}_LIBS ${${MODULE_PREFIX}_LIBS} rdpgfx-client)
 set(${MODULE_PREFIX}_LIBS ${${MODULE_PREFIX}_LIBS} winpr freerdp)
 
 target_link_libraries(${MODULE_NAME} ${${MODULE_PREFIX}_LIBS})
-install(TARGETS ${MODULE_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT server)
+install(TARGETS ${MODULE_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT server)
 if (WITH_DEBUG_SYMBOLS AND MSVC)
-    install(FILES ${CMAKE_PDB_BINARY_DIR}/${MODULE_NAME}.pdb DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT symbols)
+    install(FILES ${CMAKE_PDB_BINARY_DIR}/${MODULE_NAME}.pdb DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT symbols)
 endif()
 
 set_property(TARGET ${MODULE_NAME} PROPERTY FOLDER "Server/proxy")
 
-CMAKE_DEPENDENT_OPTION(WITH_PROXY_MODULES "Compile proxy modules" OFF	"WITH_PROXY" OFF)
+option(WITH_PROXY_APP "Compile proxy application" ON)
+
+if (WITH_PROXY_APP)
+    set(APP_NAME "freerdp-proxy")
+    add_executable(${APP_NAME}
+        ${PROXY_APP_SRCS})
+    target_link_libraries(${APP_NAME} ${MODULE_NAME})
+    install(TARGETS ${APP_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT server)
+    if (WITH_DEBUG_SYMBOLS AND MSVC)
+        install(FILES ${CMAKE_PDB_BINARY_DIR}/${APP_NAME}.pdb DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT symbols)
+    endif()
+
+    set_property(TARGET ${APP_NAME} PROPERTY FOLDER "Server/proxy")
+endif()
+
+option(WITH_PROXY_MODULES "Compile proxy modules" ON)
 if (WITH_PROXY_MODULES)
   add_subdirectory("modules")
 endif()
