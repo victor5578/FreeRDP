@@ -29,6 +29,8 @@
 #include "pf_config.h"
 #include "pf_modules.h"
 
+#include <freerdp/server/proxy/proxy_config.h>
+
 #define TAG PROXY_TAG("config")
 
 #define CONFIG_PRINT_SECTION(section) WLog_INFO(TAG, "\t%s:", section)

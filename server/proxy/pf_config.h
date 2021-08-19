@@ -76,27 +76,4 @@ struct proxy_config
 	size_t RequiredPluginsCount;
 };
 
-typedef struct proxy_config proxyConfig;
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-	FREERDP_API BOOL pf_config_get_uint16(wIniFile* ini, const char* section, const char* key,
-	                                      UINT16* result);
-	FREERDP_API BOOL pf_config_get_uint32(wIniFile* ini, const char* section, const char* key,
-	                                      UINT32* result);
-	FREERDP_API BOOL pf_config_get_bool(wIniFile* ini, const char* section, const char* key);
-	FREERDP_API const char* pf_config_get_str(wIniFile* ini, const char* section, const char* key);
-
-	FREERDP_API proxyConfig* pf_server_config_load_file(const char* path);
-	FREERDP_API proxyConfig* pf_server_config_load_buffer(const char* buffer);
-	FREERDP_API void pf_server_config_print(const proxyConfig* config);
-	FREERDP_API void pf_server_config_free(proxyConfig* config);
-
-#ifdef __cplusplus
-};
-#endif
-
 #endif /* FREERDP_SERVER_PROXY_PFCONFIG_H */

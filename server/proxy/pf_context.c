@@ -22,6 +22,8 @@
 #include <winpr/crypto.h>
 #include <winpr/print.h>
 
+#include <freerdp/server/proxy/proxy_server.h>
+
 #include "pf_client.h"
 #include "pf_context.h"
 

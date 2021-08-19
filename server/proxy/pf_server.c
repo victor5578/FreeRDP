@@ -31,6 +31,8 @@
 #include <freerdp/channels/wtsvc.h>
 #include <freerdp/channels/channels.h>
 
+#include <freerdp/server/proxy/proxy_server.h>
+
 #include "pf_server.h"
 #include "pf_log.h"
 #include "pf_config.h"

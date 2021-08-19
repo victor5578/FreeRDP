@@ -26,6 +26,7 @@
 
 #include <freerdp/version.h>
 #include <freerdp/build-config.h>
+#include <freerdp/server/proxy/proxy_server.h>
 #include <winpr/collections.h>
 #include <stdlib.h>
 #include <signal.h>
