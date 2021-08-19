@@ -19,11 +19,6 @@
  * limitations under the License.
  */
 
-#include "pf_server.h"
-#include "pf_config.h"
-#include "pf_log.h"
-#include "pf_modules.h"
-
 #include <freerdp/version.h>
 #include <freerdp/build-config.h>
 #include <freerdp/server/proxy/proxy_server.h>
@@ -46,7 +41,6 @@ static WINPR_NORETURN(void cleanup_handler(int signum))
 	WLog_INFO(TAG, "freeing loaded modules and plugins.");
 	pf_modules_free();
 
-	pf_server_config_free(server->config);
 	pf_server_free(server);
 
 	WLog_INFO(TAG, "exiting.");
@@ -97,7 +91,7 @@ int main(int argc, char* argv[])
 
 	config = pf_server_config_load_file(config_path);
 	if (!config)
-		goto fail;
+        goto fail_early;
 
 	pf_server_config_print(config);
 
@@ -105,12 +99,12 @@ int main(int argc, char* argv[])
 	                     config->ModulesCount))
 	{
 		WLog_ERR(TAG, "failed to initialize proxy modules!");
-		goto fail;
+        goto fail_early;
 	}
 
 	pf_modules_list_loaded_plugins();
 	if (!is_all_required_modules_loaded(config))
-		goto fail;
+        goto fail_early;
 
 	pf_server_register_signal_handlers();
 
@@ -125,9 +119,13 @@ int main(int argc, char* argv[])
 		goto fail;
 
 	status = 0;
+
+fail_early:
+    pf_server_config_free(config);
+
 fail:
 	pf_server_free(server);
 	pf_modules_free();
-	pf_server_config_free(config);
+
 	return status;
 }

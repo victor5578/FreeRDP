@@ -97,16 +97,7 @@ set_property(TARGET ${MODULE_NAME} PROPERTY FOLDER "Server/proxy")
 option(WITH_PROXY_APP "Compile proxy application" ON)
 
 if (WITH_PROXY_APP)
-    set(APP_NAME "freerdp-proxy")
-    add_executable(${APP_NAME}
-        ${PROXY_APP_SRCS})
-    target_link_libraries(${APP_NAME} ${MODULE_NAME})
-    install(TARGETS ${APP_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT server)
-    if (WITH_DEBUG_SYMBOLS AND MSVC)
-        install(FILES ${CMAKE_PDB_BINARY_DIR}/${APP_NAME}.pdb DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT symbols)
-    endif()
-
-    set_property(TARGET ${APP_NAME} PROPERTY FOLDER "Server/proxy")
+  add_subdirectory("cli")
 endif()
 
 option(WITH_PROXY_MODULES "Compile proxy modules" ON)
