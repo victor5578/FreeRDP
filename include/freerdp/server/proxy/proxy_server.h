@@ -34,7 +34,10 @@ extern "C"
 	FREERDP_API proxyServer* pf_server_new(const proxyConfig* config, proxyModule* module);
 
 	FREERDP_API void pf_server_free(proxyServer* server);
+
 	FREERDP_API BOOL pf_server_start(proxyServer* server);
+	FREERDP_API BOOL pf_server_start_from_socket(proxyServer* server, int socket);
+
 	FREERDP_API void pf_server_stop(proxyServer* server);
 	FREERDP_API BOOL pf_server_run(proxyServer* server);
 

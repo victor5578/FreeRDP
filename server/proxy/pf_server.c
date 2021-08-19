@@ -579,6 +579,44 @@ error:
 	return FALSE;
 }
 
+BOOL pf_server_start_from_socket(proxyServer* server, int socket)
+{
+	WSADATA wsaData;
+	WTSRegisterWtsApiFunctionTable(FreeRDP_InitWtsApi());
+	winpr_InitializeSSL(WINPR_SSL_INIT_DEFAULT);
+
+	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+		goto error;
+
+	if (!server->listener->OpenFromSocket(server->listener, socket))
+	{
+		switch (errno)
+		{
+			case EADDRINUSE:
+				WLog_ERR(TAG, "failed to start listener: address already in use!");
+				break;
+			case EACCES:
+				WLog_ERR(TAG, "failed to start listener: insufficent permissions!");
+				break;
+			default:
+				WLog_ERR(TAG, "failed to start listener: errno=%d", errno);
+				break;
+		}
+
+		goto error;
+	}
+
+	server->thread = CreateThread(NULL, 0, pf_server_mainloop, (void*)server, 0, NULL);
+	if (!server->thread)
+		goto error;
+
+	return TRUE;
+
+error:
+	WSACleanup();
+	return FALSE;
+}
+
 static void pf_server_clients_list_client_free(void* obj)
 {
 	proxyData* pdata = (proxyData*)obj;
