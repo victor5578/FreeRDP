@@ -26,11 +26,17 @@
 static constexpr char plugin_name[] = "demo";
 static constexpr char plugin_desc[] = "this is a test plugin";
 
-static proxyPluginsManager* g_plugins_manager = NULL;
-
-static BOOL demo_filter_keyboard_event(proxyData* pdata, void* param)
+static BOOL demo_filter_keyboard_event(proxyPlugin* plugin, proxyData* pdata, void* param)
 {
+	proxyPluginsManager* mgr;
 	auto event_data = static_cast<proxyKeyboardEventInfo*>(param);
+
+	WINPR_ASSERT(plugin);
+	WINPR_ASSERT(pdata);
+
+	mgr = plugin->mgr;
+	WINPR_ASSERT(mgr);
+
 	if (event_data == NULL)
 		return FALSE;
 
@@ -38,40 +44,60 @@ static BOOL demo_filter_keyboard_event(proxyData* pdata, void* param)
 	{
 		/* user typed 'B', that means bye :) */
 		std::cout << "C++ demo plugin: aborting connection" << std::endl;
-		g_plugins_manager->AbortConnect(g_plugins_manager, pdata);
+		mgr->AbortConnect(mgr, pdata);
 	}
 
 	return TRUE;
 }
 
-static BOOL demo_plugin_unload(proxyPlugin* plugin, void* userdata)
+static BOOL demo_plugin_unload(proxyPlugin* plugin)
 {
 	std::cout << "C++ demo plugin: unloading..." << std::endl;
+
+	/* Here we have to free up our custom data storage. */
+	if (plugin)
+		free(plugin->custom);
+
 	return TRUE;
 }
 
-static const proxyPlugin demo_plugin = {
-	plugin_name,                /* name */
-	plugin_desc,                /* description */
-	demo_plugin_unload,         /* PluginUnload */
-	NULL,                       /* ClientPreConnect */
-	NULL,                       /* ClientPostConnect */
-	NULL,                       /* ClientLoginFailure */
-	NULL,                       /* ClientEndPaint */
-	NULL,                       /* ServerPostConnect */
-	NULL,                       /* ServerChannelsInit */
-	NULL,                       /* ServerChannelsFree */
-	NULL,                       /* ServerSessionEnd */
-	demo_filter_keyboard_event, /* KeyboardEvent */
-	NULL,                       /* MouseEvent */
-	NULL,                       /* ClientChannelData */
-	NULL,                       /* ServerChannelData */
-	NULL                        /* ServerFetchTargetAddr */
-};
-
 BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, void* userdata)
 {
-	g_plugins_manager = plugins_manager;
+	struct demo_custom_data
+	{
+		proxyPluginsManager* mgr;
+		int somesetting;
+	};
+	struct demo_custom_data* custom;
 
-	return plugins_manager->RegisterPlugin(plugins_manager, &demo_plugin, userdata);
+	proxyPlugin demo_plugin = { plugin_name,                /* name */
+		                        plugin_desc,                /* description */
+		                        demo_plugin_unload,         /* PluginUnload */
+		                        NULL,                       /* ClientPreConnect */
+		                        NULL,                       /* ClientPostConnect */
+		                        NULL,                       /* ClientLoginFailure */
+		                        NULL,                       /* ClientEndPaint */
+		                        NULL,                       /* ServerPostConnect */
+		                        NULL,                       /* ServerChannelsInit */
+		                        NULL,                       /* ServerChannelsFree */
+		                        NULL,                       /* ServerSessionEnd */
+		                        demo_filter_keyboard_event, /* KeyboardEvent */
+		                        NULL,                       /* MouseEvent */
+		                        NULL,                       /* ClientChannelData */
+		                        NULL,                       /* ServerChannelData */
+		                        NULL,                       /* ServerFetchTargetAddr */
+		                        NULL,
+		                        userdata,
+		                        NULL };
+
+	custom = (struct demo_custom_data*)calloc(1, sizeof(struct demo_custom_data));
+	if (!custom)
+		return FALSE;
+
+	custom->mgr = plugins_manager;
+	custom->somesetting = 42;
+
+	demo_plugin.custom = custom;
+
+	return plugins_manager->RegisterPlugin(plugins_manager, &demo_plugin);
 }

@@ -36,22 +36,22 @@
 
 #define BUFSIZE 8092
 
-static proxyPluginsManager* g_plugins_manager = NULL;
-static captureConfig cconfig = { 0 };
-
-static SOCKET capture_plugin_init_socket(void)
+static SOCKET capture_plugin_init_socket(const captureConfig* cconfig)
 {
 	int status;
 	int sockfd;
 	struct sockaddr_in addr = { 0 };
+
+	WINPR_ASSERT(cconfig);
+
 	sockfd = _socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	if (sockfd == -1)
 		return -1;
 
 	addr.sin_family = AF_INET;
-	addr.sin_port = htons(cconfig.port);
-	inet_pton(AF_INET, cconfig.host, &(addr.sin_addr));
+	addr.sin_port = htons(cconfig->port);
+	inet_pton(AF_INET, cconfig->host, &(addr.sin_addr));
 
 	status = _connect(sockfd, (const struct sockaddr*)&addr, sizeof(addr));
 	if (status < 0)
@@ -110,24 +110,31 @@ error:
 	return result;
 }
 
-static SOCKET capture_plugin_get_socket(proxyData* pdata)
+static SOCKET capture_plugin_get_socket(proxyPlugin* plugin, proxyData* pdata)
 {
 	void* custom;
 
-	custom = g_plugins_manager->GetPluginData(g_plugins_manager, PLUGIN_NAME, pdata);
+	WINPR_ASSERT(plugin);
+	WINPR_ASSERT(plugin->mgr);
+
+	custom = plugin->mgr->GetPluginData(plugin->mgr, PLUGIN_NAME, pdata);
 	if (!custom)
 		return -1;
 
 	return (SOCKET)custom;
 }
 
-static BOOL capture_plugin_session_end(proxyData* pdata)
+static BOOL capture_plugin_session_end(proxyPlugin* plugin, proxyData* pdata)
 {
 	SOCKET socket;
 	BOOL ret;
 	wStream* s;
 
-	socket = capture_plugin_get_socket(pdata);
+	WINPR_ASSERT(pdata);
+	WINPR_ASSERT(plugin);
+	WINPR_ASSERT(plugin->mgr);
+
+	socket = capture_plugin_get_socket(plugin, pdata);
 	if (socket == INVALID_SOCKET)
 		return FALSE;
 
@@ -179,11 +186,15 @@ error:
 	return ret;
 }
 
-static BOOL capture_plugin_client_end_paint(proxyData* pdata)
+static BOOL capture_plugin_client_end_paint(proxyPlugin* plugin, proxyData* pdata)
 {
 	pClientContext* pc = pdata->pc;
 	rdpGdi* gdi = pc->context.gdi;
 	SOCKET socket;
+
+	WINPR_ASSERT(pdata);
+	WINPR_ASSERT(plugin);
+	WINPR_ASSERT(plugin->mgr);
 
 	if (gdi->suppressOutput)
 		return TRUE;
@@ -191,7 +202,7 @@ static BOOL capture_plugin_client_end_paint(proxyData* pdata)
 	if (gdi->primary->hdc->hwnd->ninvalid < 1)
 		return TRUE;
 
-	socket = capture_plugin_get_socket(pdata);
+	socket = capture_plugin_get_socket(plugin, pdata);
 	if (socket == INVALID_SOCKET)
 		return FALSE;
 
@@ -206,19 +217,27 @@ static BOOL capture_plugin_client_end_paint(proxyData* pdata)
 	return TRUE;
 }
 
-static BOOL capture_plugin_client_post_connect(proxyData* pdata)
+static BOOL capture_plugin_client_post_connect(proxyPlugin* plugin, proxyData* pdata)
 {
+	captureConfig* cconfig;
 	SOCKET socket;
 	wStream* s;
 
-	socket = capture_plugin_init_socket();
+	WINPR_ASSERT(pdata);
+	WINPR_ASSERT(plugin);
+	WINPR_ASSERT(plugin->mgr);
+
+	cconfig = plugin->custom;
+	WINPR_ASSERT(cconfig);
+
+	socket = capture_plugin_init_socket(cconfig);
 	if (socket == INVALID_SOCKET)
 	{
 		WLog_ERR(TAG, "failed to establish a connection");
 		return FALSE;
 	}
 
-	g_plugins_manager->SetPluginData(g_plugins_manager, PLUGIN_NAME, pdata, (void*)socket);
+	plugin->mgr->SetPluginData(plugin->mgr, PLUGIN_NAME, pdata, (void*)socket);
 
 	s = capture_plugin_create_session_info_packet(pdata->pc);
 	if (!s)
@@ -227,7 +246,7 @@ static BOOL capture_plugin_client_post_connect(proxyData* pdata)
 	return capture_plugin_send_packet(socket, s);
 }
 
-static BOOL capture_plugin_server_post_connect(proxyData* pdata)
+static BOOL capture_plugin_server_post_connect(proxyPlugin* plugin, proxyData* pdata)
 {
 	pServerContext* ps = pdata->ps;
 	const proxyConfig* config = pdata->config;
@@ -249,41 +268,52 @@ static BOOL capture_plugin_server_post_connect(proxyData* pdata)
 	return TRUE;
 }
 
-static BOOL capture_plugin_unload(proxyPlugin* plugin, void* userdata)
+static BOOL capture_plugin_unload(proxyPlugin* plugin)
 {
-	capture_plugin_config_free_internal(&cconfig);
+	if (plugin)
+	{
+		captureConfig* cconfig = plugin->custom;
+		WINPR_ASSERT(cconfig);
+
+		capture_plugin_config_free_internal(cconfig);
+		free(cconfig);
+	}
 	return TRUE;
 }
 
-static proxyPlugin demo_plugin = {
-	PLUGIN_NAME,                        /* name */
-	PLUGIN_DESC,                        /* description */
-	capture_plugin_unload,              /* PluginUnload */
-	NULL,                               /* ClientPreConnect */
-	capture_plugin_client_post_connect, /* ClientPostConnect */
-	NULL,                               /* ClientLoginFailure */
-	capture_plugin_client_end_paint,    /* ClientEndPaint */
-	capture_plugin_server_post_connect, /* ServerPostConnect */
-	NULL,                               /* ServerChannelsInit */
-	NULL,                               /* ServerChannelsFree */
-	capture_plugin_session_end,         /* Session End */
-	NULL,                               /* KeyboardEvent */
-	NULL,                               /* MouseEvent */
-	NULL,                               /* ClientChannelData */
-	NULL,                               /* ServerChannelData */
-	NULL                                /* ServerFetchTargetAddr */
-};
-
 BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, void* userdata)
 {
-	g_plugins_manager = plugins_manager;
 
-	if (!capture_plugin_init_config(&cconfig))
+	proxyPlugin demo_plugin = { PLUGIN_NAME,                        /* name */
+		                        PLUGIN_DESC,                        /* description */
+		                        capture_plugin_unload,              /* PluginUnload */
+		                        NULL,                               /* ClientPreConnect */
+		                        capture_plugin_client_post_connect, /* ClientPostConnect */
+		                        NULL,                               /* ClientLoginFailure */
+		                        capture_plugin_client_end_paint,    /* ClientEndPaint */
+		                        capture_plugin_server_post_connect, /* ServerPostConnect */
+		                        NULL,                               /* ServerChannelsInit */
+		                        NULL,                               /* ServerChannelsFree */
+		                        capture_plugin_session_end,         /* Session End */
+		                        NULL,                               /* KeyboardEvent */
+		                        NULL,                               /* MouseEvent */
+		                        NULL,                               /* ClientChannelData */
+		                        NULL,                               /* ServerChannelData */
+		                        NULL,                               /* ServerFetchTargetAddr */
+		                        NULL,
+		                        userdata,
+		                        NULL };
+	captureConfig* cconfig = calloc(1, sizeof(captureConfig));
+	if (!cconfig)
+		return FALSE;
+	demo_plugin.custom = cconfig;
+
+	if (!capture_plugin_init_config(cconfig))
 	{
 		WLog_ERR(TAG, "failed to load config");
 		return FALSE;
 	}
 
-	WLog_INFO(TAG, "host: %s, port: %" PRIu16 "", cconfig.host, cconfig.port);
-	return plugins_manager->RegisterPlugin(plugins_manager, &demo_plugin, userdata);
+	WLog_INFO(TAG, "host: %s, port: %" PRIu16 "", cconfig->host, cconfig->port);
+	return plugins_manager->RegisterPlugin(plugins_manager, &demo_plugin);
 }

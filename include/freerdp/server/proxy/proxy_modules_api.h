@@ -27,16 +27,18 @@
 #define MODULE_TAG(module) "proxy.modules." module
 
 typedef struct proxy_data proxyData;
+typedef struct proxy_plugin proxyPlugin;
+typedef struct proxy_plugins_manager proxyPluginsManager;
 
 /* hook callback. should return TRUE on success or FALSE on error. */
-typedef BOOL (*proxyHookFn)(proxyData*);
+typedef BOOL (*proxyHookFn)(proxyPlugin*, proxyData*);
 
 /*
  * Filter callback:
  * 	It MUST return TRUE if the related event should be proxied,
  * 	or FALSE if it should be ignored.
  */
-typedef BOOL (*proxyFilterFn)(proxyData*, void*);
+typedef BOOL (*proxyFilterFn)(proxyPlugin*, proxyData*, void*);
 
 /* describes a plugin: name, description and callbacks to execute. */
 typedef struct proxy_plugin
@@ -44,7 +46,7 @@ typedef struct proxy_plugin
 	const char* name;        /* unique module name */
 	const char* description; /* module description */
 
-	BOOL (*PluginUnload)(struct proxy_plugin* plugin, void* userdata);
+	BOOL (*PluginUnload)(proxyPlugin* plugin);
 
 	/* proxy hooks. a module can set these function pointers to register hooks */
 	proxyHookFn ClientPreConnect;
@@ -62,7 +64,14 @@ typedef struct proxy_plugin
 	proxyFilterFn ClientChannelData; /* passthrough channels data */
 	proxyFilterFn ServerChannelData; /* passthrough channels data */
 	proxyFilterFn ServerFetchTargetAddr;
-} proxyPlugin;
+
+	/* Runtime data fields */
+	proxyPluginsManager* mgr; /** Set during plugin registration */
+	void* userdata; /** Custom configuration data provided with RegisterPlugin, memory managed
+	                   outside of plugin */
+	void* custom;   /** Custom configuration data, must be allocated in RegisterPlugin and freed in
+	                   PluginUnload */
+};
 
 /*
  * Main API for use by external modules.
@@ -75,7 +84,7 @@ typedef struct proxy_plugins_manager
 {
 	/* used for registering a fresh new proxy plugin. */
 	BOOL(*RegisterPlugin)
-	(struct proxy_plugins_manager* mgr, const proxyPlugin* plugin, void* userdata);
+	(struct proxy_plugins_manager* mgr, const proxyPlugin* plugin);
 
 	/* used for setting plugin's per-session info. */
 	BOOL (*SetPluginData)(struct proxy_plugins_manager* mgr, const char*, proxyData*, void*);
@@ -85,7 +94,7 @@ typedef struct proxy_plugins_manager
 
 	/* used for aborting a session. */
 	void (*AbortConnect)(struct proxy_plugins_manager* mgr, proxyData*);
-} proxyPluginsManager;
+};
 
 typedef BOOL (*proxyModuleEntryPoint)(proxyPluginsManager* plugins_manager, void* userdata);
 
