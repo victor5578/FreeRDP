@@ -148,15 +148,4 @@ typedef struct fetch_target_event_info
 #define WINPR_PACK_POP
 #include <winpr/pack.h>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-	FREERDP_API BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, void* userdata);
-
-#ifdef __cplusplus
-};
-#endif
-
 #endif /* FREERDP_SERVER_PROXY_MODULES_API_H */

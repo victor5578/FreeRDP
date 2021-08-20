@@ -281,7 +281,7 @@ static BOOL capture_plugin_unload(proxyPlugin* plugin)
 	return TRUE;
 }
 
-BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, void* userdata)
+FREERDP_API BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, void* userdata)
 {
 
 	proxyPlugin demo_plugin = { PLUGIN_NAME,                        /* name */

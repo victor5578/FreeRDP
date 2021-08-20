@@ -61,7 +61,7 @@ static BOOL demo_plugin_unload(proxyPlugin* plugin)
 	return TRUE;
 }
 
-BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, void* userdata)
+FREERDP_API BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, void* userdata)
 {
 	struct demo_custom_data
 	{
