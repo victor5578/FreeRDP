@@ -39,7 +39,6 @@
 
 #define PROXY_SESSION_ID_LENGTH 32
 
-typedef struct proxy_data proxyData;
 /**
  * Wraps rdpContext and holds the state for the proxy's server.
  */

@@ -27,6 +27,7 @@
 #include <freerdp/build-config.h>
 
 #include <freerdp/server/proxy/proxy_log.h>
+#include <freerdp/server/proxy/proxy_modules_api.h>
 
 #include "pf_context.h"
 #include "proxy_modules.h"
