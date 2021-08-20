@@ -60,8 +60,9 @@ extern "C"
 	FREERDP_API proxyConfig* pf_server_config_load_buffer(const char* buffer);
 
 	/**
-	 * @brief pf_server_config_print
-	 * @param config
+	 * @brief pf_server_config_print Print the configuration to stdout
+	 *
+	 * @param config A pointer to the configuration to print. Must NOT be NULL.
 	 */
 	FREERDP_API void pf_server_config_print(const proxyConfig* config);
 

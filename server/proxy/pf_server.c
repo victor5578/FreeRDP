@@ -345,9 +345,20 @@ static BOOL pf_server_initialize_peer_connection(freerdp_peer* peer)
 
 	settings->SupportMonitorLayoutPdu = TRUE;
 	settings->SupportGraphicsPipeline = config->GFX;
-	settings->CertificateFile = _strdup("server.crt");
-	settings->PrivateKeyFile = _strdup("server.key");
-	settings->RdpKeyFile = _strdup("server.key");
+	if (config->CertificateFile)
+		settings->CertificateFile = _strdup(config->CertificateFile);
+	if (config->CertificateContent)
+		settings->CertificateContent = _strdup(config->CertificateContent);
+
+	if (config->PrivateKeyFile)
+		settings->PrivateKeyFile = _strdup(config->PrivateKeyFile);
+	if (config->PrivateKeyContent)
+		settings->PrivateKeyContent = _strdup(config->PrivateKeyContent);
+
+	if (config->RdpKeyFile)
+		settings->RdpKeyFile = _strdup(config->RdpKeyFile);
+	if (config->RdpKeyContent)
+		settings->RdpKeyContent = _strdup(config->RdpKeyContent);
 
 	if (config->RemoteApp)
 	{

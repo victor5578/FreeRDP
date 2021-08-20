@@ -34,6 +34,8 @@
 
 #define CONFIG_PRINT_SECTION(section) WLog_INFO(TAG, "\t%s:", section)
 #define CONFIG_PRINT_STR(config, key) WLog_INFO(TAG, "\t\t%s: %s", #key, config->key)
+#define CONFIG_PRINT_STR_CONTENT(config, key) \
+	WLog_INFO(TAG, "\t\t%s: %s", #key, config->key ? "set" : NULL)
 #define CONFIG_PRINT_BOOL(config, key) \
 	WLog_INFO(TAG, "\t\t%s: %s", #key, config->key ? "TRUE" : "FALSE")
 #define CONFIG_PRINT_UINT16(config, key) WLog_INFO(TAG, "\t\t%s: %" PRIu16 "", #key, config->key)
@@ -54,14 +56,21 @@ static char** pf_config_parse_comma_separated_list(const char* list, size_t* cou
 }
 
 static BOOL pf_config_get_uint16(wIniFile* ini, const char* section, const char* key,
-                                 UINT16* result)
+                                 UINT16* result, BOOL required)
 {
 	int val;
+	const char* strval;
 
 	WINPR_ASSERT(result);
 
+	strval = IniFile_GetKeyValueString(ini, section, key);
+	if (!strval && required)
+	{
+		WLog_ERR(TAG, "[%s]: key '%s.%s' does not exist.", __FUNCTION__, section, key);
+		return FALSE;
+	}
 	val = IniFile_GetKeyValueInt(ini, section, key);
-	if ((val < 0) || (val > UINT16_MAX))
+	if ((val <= 0) || (val > UINT16_MAX))
 	{
 		WLog_ERR(TAG, "[%s]: invalid value %d for key '%s.%s'.", __FUNCTION__, val, section, key);
 		return FALSE;
@@ -72,11 +81,20 @@ static BOOL pf_config_get_uint16(wIniFile* ini, const char* section, const char*
 }
 
 static BOOL pf_config_get_uint32(wIniFile* ini, const char* section, const char* key,
-                                 UINT32* result)
+                                 UINT32* result, BOOL required)
 {
 	int val;
+	const char* strval;
 
 	WINPR_ASSERT(result);
+
+	strval = IniFile_GetKeyValueString(ini, section, key);
+	if (!strval && required)
+	{
+		WLog_ERR(TAG, "[%s]: key '%s.%s' does not exist.", __FUNCTION__, section, key);
+		return FALSE;
+	}
+
 	val = IniFile_GetKeyValueInt(ini, section, key);
 	if ((val < 0) || (val > INT32_MAX))
 	{
@@ -112,7 +130,8 @@ static BOOL pf_config_get_bool(wIniFile* ini, const char* section, const char* k
 	return FALSE;
 }
 
-static const char* pf_config_get_str(wIniFile* ini, const char* section, const char* key)
+static const char* pf_config_get_str(wIniFile* ini, const char* section, const char* key,
+                                     BOOL required)
 {
 	const char* value;
 
@@ -120,7 +139,8 @@ static const char* pf_config_get_str(wIniFile* ini, const char* section, const c
 
 	if (!value)
 	{
-		WLog_ERR(TAG, "[%s]: key '%s.%s' not found.", __FUNCTION__, section, key);
+		if (required)
+			WLog_ERR(TAG, "[%s]: key '%s.%s' not found.", __FUNCTION__, section, key);
 		return NULL;
 	}
 
@@ -132,10 +152,10 @@ static BOOL pf_config_load_server(wIniFile* ini, proxyConfig* config)
 	const char* host;
 
 	WINPR_ASSERT(config);
-	if (!pf_config_get_uint16(ini, "Server", "Port", &config->Port))
+	if (!pf_config_get_uint16(ini, "Server", "Port", &config->Port, TRUE))
 		return FALSE;
 
-	host = pf_config_get_str(ini, "Server", "Host");
+	host = pf_config_get_str(ini, "Server", "Host", TRUE);
 
 	if (!host)
 		return FALSE;
@@ -153,10 +173,12 @@ static BOOL pf_config_load_target(wIniFile* ini, proxyConfig* config)
 	const char* target_host;
 
 	WINPR_ASSERT(config);
-	if (!pf_config_get_uint16(ini, "Target", "Port", &config->TargetPort))
+	config->FixedTarget = pf_config_get_bool(ini, "Target", "FixedTarget");
+
+	if (!pf_config_get_uint16(ini, "Target", "Port", &config->TargetPort, config->FixedTarget))
 		return FALSE;
 
-	target_host = pf_config_get_str(ini, "Target", "Host");
+	target_host = pf_config_get_str(ini, "Target", "Host", config->FixedTarget);
 
 	if (!target_host)
 		return FALSE;
@@ -165,7 +187,6 @@ static BOOL pf_config_load_target(wIniFile* ini, proxyConfig* config)
 	if (!config->TargetHost)
 		return FALSE;
 
-	config->FixedTarget = pf_config_get_bool(ini, "Target", "FixedTarget");
 	return TRUE;
 }
 
@@ -178,7 +199,7 @@ static BOOL pf_config_load_channels(wIniFile* ini, proxyConfig* config)
 	config->AudioOutput = pf_config_get_bool(ini, "Channels", "AudioOutput");
 	config->RemoteApp = pf_config_get_bool(ini, "Channels", "RemoteApp");
 	config->Passthrough = pf_config_parse_comma_separated_list(
-	    pf_config_get_str(ini, "Channels", "Passthrough"), &config->PassthroughCount);
+	    pf_config_get_str(ini, "Channels", "Passthrough", FALSE), &config->PassthroughCount);
 
 	{
 		/* validate channel name length */
@@ -225,7 +246,7 @@ static BOOL pf_config_load_clipboard(wIniFile* ini, proxyConfig* config)
 	WINPR_ASSERT(config);
 	config->TextOnly = pf_config_get_bool(ini, "Clipboard", "TextOnly");
 
-	if (!pf_config_get_uint32(ini, "Clipboard", "MaxTextLength", &config->MaxTextLength))
+	if (!pf_config_get_uint32(ini, "Clipboard", "MaxTextLength", &config->MaxTextLength, FALSE))
 		return FALSE;
 
 	return TRUE;
@@ -251,6 +272,117 @@ static BOOL pf_config_load_gfx_settings(wIniFile* ini, proxyConfig* config)
 {
 	WINPR_ASSERT(config);
 	config->DecodeGFX = pf_config_get_bool(ini, "GFXSettings", "DecodeGFX");
+	return TRUE;
+}
+
+static BOOL pf_config_load_certificates(wIniFile* ini, proxyConfig* config)
+{
+	const char* tmp1;
+	const char* tmp2;
+
+	WINPR_ASSERT(ini);
+	WINPR_ASSERT(config);
+
+	tmp1 = pf_config_get_str(ini, "Certificates", "CertificateFile", FALSE);
+	if (tmp1)
+	{
+		if (!winpr_PathFileExists(tmp1))
+		{
+			WLog_ERR(TAG, "Certificates/CertificateFile file %s does not exist", tmp1);
+			return FALSE;
+		}
+		config->CertificateFile = _strdup(tmp1);
+	}
+	tmp2 = pf_config_get_str(ini, "Certificates", "CertificateContent", FALSE);
+	if (tmp2)
+	{
+		if (strlen(tmp2) < 1)
+		{
+			WLog_ERR(TAG, "Certificates/CertificateContent has invalid empty value");
+			return FALSE;
+		}
+		config->CertificateContent = _strdup(tmp2);
+	}
+	if (tmp1 && tmp2)
+	{
+		WLog_ERR(TAG, "Certificates/CertificateFile and Certificates/CertificateContent are "
+		              "mutually exclusive options");
+		return FALSE;
+	}
+	else if (!tmp1 && !tmp2)
+	{
+		WLog_ERR(TAG, "Certificates/CertificateFile or Certificates/CertificateContent are "
+		              "required settings");
+		return FALSE;
+	}
+
+	tmp1 = pf_config_get_str(ini, "Certificates", "PrivateKeyFile", FALSE);
+	if (tmp1)
+	{
+		if (!winpr_PathFileExists(tmp1))
+		{
+			WLog_ERR(TAG, "Certificates/PrivateKeyFile file %s does not exist", tmp1);
+			return FALSE;
+		}
+		config->PrivateKeyFile = _strdup(tmp1);
+	}
+	tmp2 = pf_config_get_str(ini, "Certificates", "PrivateKeyContent", FALSE);
+	if (tmp2)
+	{
+		if (strlen(tmp2) < 1)
+		{
+			WLog_ERR(TAG, "Certificates/PrivateKeyContent has invalid empty value");
+			return FALSE;
+		}
+		config->PrivateKeyContent = _strdup(tmp2);
+	}
+
+	if (tmp1 && tmp2)
+	{
+		WLog_ERR(TAG, "Certificates/PrivateKeyFile and Certificates/PrivateKeyContent are "
+		              "mutually exclusive options");
+		return FALSE;
+	}
+	else if (!tmp1 && !tmp2)
+	{
+		WLog_ERR(TAG, "Certificates/PrivateKeyFile or Certificates/PrivateKeyContent are "
+		              "are required settings");
+		return FALSE;
+	}
+
+	tmp1 = pf_config_get_str(ini, "Certificates", "RdpKeyFile", FALSE);
+	if (tmp1)
+	{
+		if (!winpr_PathFileExists(tmp1))
+		{
+			WLog_ERR(TAG, "Certificates/RdpKeyFile file %s does not exist", tmp1);
+			return FALSE;
+		}
+		config->RdpKeyFile = _strdup(tmp1);
+	}
+	tmp2 = pf_config_get_str(ini, "Certificates", "RdpKeyContent", FALSE);
+	if (tmp2)
+	{
+		if (strlen(tmp2) < 1)
+		{
+			WLog_ERR(TAG, "Certificates/RdpKeyContent has invalid empty value");
+			return FALSE;
+		}
+		config->RdpKeyContent = _strdup(tmp2);
+	}
+	if (tmp1 && tmp2)
+	{
+		WLog_ERR(TAG, "Certificates/RdpKeyFile and Certificates/RdpKeyContent are mutually "
+		              "exclusive options");
+		return FALSE;
+	}
+	else if (!tmp1 && !tmp2)
+	{
+		WLog_ERR(TAG, "Certificates/RdpKeyFile or Certificates/RdpKeyContent are "
+		              "required settings");
+		return FALSE;
+	}
+
 	return TRUE;
 }
 
@@ -285,6 +417,9 @@ proxyConfig* server_config_load_ini(wIniFile* ini)
 			goto out;
 
 		if (!pf_config_load_gfx_settings(ini, config))
+			goto out;
+
+		if (!pf_config_load_certificates(ini, config))
 			goto out;
 	}
 	return config;
@@ -352,6 +487,8 @@ static void pf_server_config_print_list(char** list, size_t count)
 
 void pf_server_config_print(const proxyConfig* config)
 {
+	size_t x;
+
 	WINPR_ASSERT(config);
 	WLog_INFO(TAG, "Proxy configuration:");
 
@@ -400,6 +537,24 @@ void pf_server_config_print(const proxyConfig* config)
 
 	CONFIG_PRINT_SECTION("GFXSettings");
 	CONFIG_PRINT_BOOL(config, DecodeGFX);
+
+	/* modules */
+	CONFIG_PRINT_SECTION("Plugins/Modules");
+	for (x = 0; x < config->ModulesCount; x++)
+		CONFIG_PRINT_STR(config, Modules[x]);
+
+	/* Required plugins */
+	CONFIG_PRINT_SECTION("Plugins/Required");
+	for (x = 0; x < config->RequiredPluginsCount; x++)
+		CONFIG_PRINT_STR(config, RequiredPlugins[x]);
+
+	CONFIG_PRINT_SECTION("Certificates");
+	CONFIG_PRINT_STR(config, CertificateFile);
+	CONFIG_PRINT_STR_CONTENT(config, CertificateContent);
+	CONFIG_PRINT_STR(config, PrivateKeyFile);
+	CONFIG_PRINT_STR_CONTENT(config, PrivateKeyContent);
+	CONFIG_PRINT_STR(config, RdpKeyFile);
+	CONFIG_PRINT_STR_CONTENT(config, RdpKeyContent);
 }
 
 void pf_server_config_free(proxyConfig* config)
@@ -412,6 +567,12 @@ void pf_server_config_free(proxyConfig* config)
 	free(config->Modules);
 	free(config->TargetHost);
 	free(config->Host);
+	free(config->CertificateFile);
+	free(config->CertificateContent);
+	free(config->PrivateKeyFile);
+	free(config->PrivateKeyContent);
+	free(config->RdpKeyFile);
+	free(config->RdpKeyContent);
 	free(config);
 }
 

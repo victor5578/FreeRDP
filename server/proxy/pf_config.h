@@ -72,6 +72,15 @@ struct proxy_config
 
 	char** RequiredPlugins; /* required plugin names */
 	size_t RequiredPluginsCount;
+
+	char* CertificateFile;
+	char* CertificateContent;
+
+	char* PrivateKeyFile;
+	char* PrivateKeyContent;
+
+	char* RdpKeyFile;
+	char* RdpKeyContent;
 };
 
 #endif /* FREERDP_SERVER_PROXY_PFCONFIG_H */
