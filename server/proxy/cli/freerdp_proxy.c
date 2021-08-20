@@ -37,7 +37,8 @@ static proxyServer* server = NULL;
 static void cleanup_handler(int signum)
 {
 	printf("\n");
-	WLog_INFO(TAG, "[%s]: caught signal %d, starting cleanup...", __FUNCTION__, signum);
+	WLog_INFO(TAG, "[%s]: caught signal %s [%d], starting cleanup...", __FUNCTION__,
+	          strsignal(signum), signum);
 
 	WLog_INFO(TAG, "stopping all connections.");
 	pf_server_stop(server);
@@ -59,6 +60,8 @@ int main(int argc, char* argv[])
 	char* config_path = "config.ini";
 	int status = -1;
 
+	pf_server_register_signal_handlers();
+
 	WLog_INFO(TAG, "freerdp-proxy version info:");
 	WLog_INFO(TAG, "\tFreeRDP version: %s", FREERDP_VERSION_FULL);
 	WLog_INFO(TAG, "\tGit commit: %s", FREERDP_GIT_REVISION);
@@ -72,8 +75,6 @@ int main(int argc, char* argv[])
 		goto fail;
 
 	pf_server_config_print(config);
-
-	pf_server_register_signal_handlers();
 
 	server = pf_server_new(config);
 	if (!server)
