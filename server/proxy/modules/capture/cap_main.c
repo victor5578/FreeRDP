@@ -17,11 +17,6 @@
  * limitations under the License.
  */
 
-#define TAG MODULE_TAG("capture")
-
-#define PLUGIN_NAME "capture"
-#define PLUGIN_DESC "stream egfx connections over tcp"
-
 #include <errno.h>
 #include <winpr/image.h>
 #include <freerdp/gdi/gdi.h>
@@ -33,6 +28,11 @@
 #include "pf_context.h"
 #include "cap_config.h"
 #include "cap_protocol.h"
+
+#define TAG MODULE_TAG("capture")
+
+#define PLUGIN_NAME "capture"
+#define PLUGIN_DESC "stream egfx connections over tcp"
 
 #define BUFSIZE 8092
 
