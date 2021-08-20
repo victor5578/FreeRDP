@@ -31,7 +31,20 @@ extern "C"
 {
 #endif
 
+	/**
+	 * @brief pf_server_new Creates a new proxy server instance
+	 *
+	 * @param config The proxy server configuration to use. Must NOT be NULL.
+	 *
+	 * @return A new proxy server instance or NULL on failure.
+	 */
 	FREERDP_API proxyServer* pf_server_new(const proxyConfig* config);
+
+	/**
+	 * @brief pf_server_free Cleans up a (stopped) proxy server instance.
+	 *
+	 * @param server The proxy server to clean up. Might be NULL.
+	 */
 	FREERDP_API void pf_server_free(proxyServer* server);
 
 	/**
@@ -48,10 +61,50 @@ extern "C"
 	FREERDP_API BOOL pf_server_add_module(proxyServer* server, proxyModuleEntryPoint ep,
 	                                      void* userdata);
 
+	/**
+	 * @brief pf_server_start Starts the proxy, binding the configured port.
+	 *
+	 * @param server The server instance. Must NOT be NULL.
+	 *
+	 * @return TRUE for success, FALSE on error
+	 */
 	FREERDP_API BOOL pf_server_start(proxyServer* server);
+
+	/**
+	 * @brief pf_server_start_from_socket Starts the proxy using an existing bound socket
+	 *
+	 * @param server The server instance. Must NOT be NULL.
+	 * @param socket The bound socket to wait for events on.
+	 *
+	 * @return TRUE for success, FALSE on error
+	 */
 	FREERDP_API BOOL pf_server_start_from_socket(proxyServer* server, int socket);
 
+	/**
+	 * @brief pf_server_start_with_peer_socket Use existing peer socket
+	 *
+	 * @param server The server instance. Must NOT be NULL.
+	 * @param socket Ready to use peer socket
+	 *
+	 * @return TRUE for success, FALSE on error
+	 */
+	FREERDP_API BOOL pf_server_start_with_peer_socket(proxyServer* server, int socket);
+
+	/**
+	 * @brief pf_server_stop Stops a server instance asynchronously.
+	 *        Can be called from any thread to stop a running server instance.
+	 * @param server A pointer to the server instance to stop. May be NULL.
+	 */
 	FREERDP_API void pf_server_stop(proxyServer* server);
+
+	/**
+	 * @brief pf_server_run This (blocking) function runs the main loop of the
+	 *                      proxy.
+	 *
+	 * @param server The server instance. Must NOT be NULL.
+	 *
+	 * @return TRUE for successful termination, FALSE otherwise.
+	 */
 	FREERDP_API BOOL pf_server_run(proxyServer* server);
 
 #ifdef __cplusplus

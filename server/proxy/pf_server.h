@@ -36,7 +36,6 @@ struct proxy_server
 	freerdp_listener* listener;
 	wArrayList* clients;        /* maintain a list of active sessions, for stats */
 	wCountdownEvent* waitGroup; /* wait group used for gracefull shutdown */
-	HANDLE thread;              /* main server thread - freerdp listener thread */
 	HANDLE stopEvent;           /* an event used to signal the main thread to stop */
 };
 
