@@ -473,6 +473,7 @@ void pf_modules_free(proxyModule* module)
 
 	ArrayList_Free(module->plugins);
 	ArrayList_Free(module->handles);
+	free(module);
 }
 
 BOOL pf_modules_add(proxyModule* module, proxyModuleEntryPoint ep, void* userdata)

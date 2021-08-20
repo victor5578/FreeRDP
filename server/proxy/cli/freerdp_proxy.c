@@ -34,7 +34,7 @@
 
 static proxyServer* server = NULL;
 
-static WINPR_NORETURN(void cleanup_handler(int signum))
+static void cleanup_handler(int signum)
 {
 	printf("\n");
 	WLog_INFO(TAG, "[%s]: caught signal %d, starting cleanup...", __FUNCTION__, signum);
