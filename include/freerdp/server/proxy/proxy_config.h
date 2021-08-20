@@ -30,22 +30,81 @@ typedef struct proxy_config proxyConfig;
 extern "C"
 {
 #endif
-	FREERDP_API BOOL pf_config_get_uint16(wIniFile* ini, const char* section, const char* key,
-	                                      UINT16* result);
-	FREERDP_API BOOL pf_config_get_uint32(wIniFile* ini, const char* section, const char* key,
-	                                      UINT32* result);
-	FREERDP_API BOOL pf_config_get_bool(wIniFile* ini, const char* section, const char* key);
-	FREERDP_API const char* pf_config_get_str(wIniFile* ini, const char* section, const char* key);
 
+	/**
+	 * @brief server_config_load_ini Create a proxyConfig from a already loaded
+	 * INI file.
+	 *
+	 * @param ini A pointer to the parsed INI file. Must NOT be NULL.
+	 *
+	 * @return A proxyConfig or NULL in case of failure.
+	 */
+	FREERDP_API proxyConfig* server_config_load_ini(wIniFile* ini);
+	/**
+	 * @brief pf_server_config_load_file Create a proxyConfig from a INI file found at path.
+	 *
+	 * @param path The path of the INI file
+	 *
+	 * @return A proxyConfig or NULL in case of failure.
+	 */
 	FREERDP_API proxyConfig* pf_server_config_load_file(const char* path);
+
+	/**
+	 * @brief pf_server_config_load_buffer Create a proxyConfig from a memory string buffer in INI
+	 * file format
+	 *
+	 * @param buffer A pointer to the '\0' terminated INI string.
+	 *
+	 * @return A proxyConfig or NULL in case of failure.
+	 */
 	FREERDP_API proxyConfig* pf_server_config_load_buffer(const char* buffer);
+
+	/**
+	 * @brief pf_server_config_print
+	 * @param config
+	 */
 	FREERDP_API void pf_server_config_print(const proxyConfig* config);
+
+	/**
+	 * @brief pf_server_config_free Releases all resources associated with proxyConfig
+	 *
+	 * @param config A pointer to the proxyConfig to clean up. Might be NULL.
+	 */
 	FREERDP_API void pf_server_config_free(proxyConfig* config);
 
+	/**
+	 * @brief pf_config_required_plugins_count
+	 *
+	 * @param config A pointer to the proxyConfig. Must NOT be NULL.
+	 *
+	 * @return The number of required plugins configured.
+	 */
 	FREERDP_API size_t pf_config_required_plugins_count(const proxyConfig* config);
+
+	/**
+	 * @brief pf_config_required_plugin
+	 * @param config A pointer to the proxyConfig. Must NOT be NULL.
+	 * @param index The index of the plugin to return
+	 *
+	 * @return The name of the plugin or NULL.
+	 */
 	FREERDP_API const char* pf_config_required_plugin(const proxyConfig* config, size_t index);
 
+	/**
+	 * @brief pf_config_modules_count
+	 *
+	 * @param config A pointer to the proxyConfig. Must NOT be NULL.
+	 *
+	 * @return The number of proxy modules configured.
+	 */
 	FREERDP_API size_t pf_config_modules_count(const proxyConfig* config);
+
+	/**
+	 * @brief pf_config_modules
+	 * @param config A pointer to the proxyConfig. Must NOT be NULL.
+	 *
+	 * @return An array of strings of size pf_config_modules_count with the module names.
+	 */
 	FREERDP_API const char** pf_config_modules(const proxyConfig* config);
 
 #ifdef __cplusplus

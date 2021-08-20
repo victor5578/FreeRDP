@@ -53,9 +53,12 @@ static char** pf_config_parse_comma_separated_list(const char* list, size_t* cou
 	return CommandLineParseCommaSeparatedValues(list, count);
 }
 
-BOOL pf_config_get_uint16(wIniFile* ini, const char* section, const char* key, UINT16* result)
+static BOOL pf_config_get_uint16(wIniFile* ini, const char* section, const char* key,
+                                 UINT16* result)
 {
 	int val;
+
+	WINPR_ASSERT(result);
 
 	val = IniFile_GetKeyValueInt(ini, section, key);
 	if ((val < 0) || (val > UINT16_MAX))
@@ -68,10 +71,12 @@ BOOL pf_config_get_uint16(wIniFile* ini, const char* section, const char* key, U
 	return TRUE;
 }
 
-BOOL pf_config_get_uint32(wIniFile* ini, const char* section, const char* key, UINT32* result)
+static BOOL pf_config_get_uint32(wIniFile* ini, const char* section, const char* key,
+                                 UINT32* result)
 {
 	int val;
 
+	WINPR_ASSERT(result);
 	val = IniFile_GetKeyValueInt(ini, section, key);
 	if ((val < 0) || (val > INT32_MAX))
 	{
@@ -83,7 +88,7 @@ BOOL pf_config_get_uint32(wIniFile* ini, const char* section, const char* key, U
 	return TRUE;
 }
 
-BOOL pf_config_get_bool(wIniFile* ini, const char* section, const char* key)
+static BOOL pf_config_get_bool(wIniFile* ini, const char* section, const char* key)
 {
 	int num_value;
 	const char* str_value;
@@ -107,7 +112,7 @@ BOOL pf_config_get_bool(wIniFile* ini, const char* section, const char* key)
 	return FALSE;
 }
 
-const char* pf_config_get_str(wIniFile* ini, const char* section, const char* key)
+static const char* pf_config_get_str(wIniFile* ini, const char* section, const char* key)
 {
 	const char* value;
 
@@ -126,6 +131,7 @@ static BOOL pf_config_load_server(wIniFile* ini, proxyConfig* config)
 {
 	const char* host;
 
+	WINPR_ASSERT(config);
 	if (!pf_config_get_uint16(ini, "Server", "Port", &config->Port))
 		return FALSE;
 
@@ -146,6 +152,7 @@ static BOOL pf_config_load_target(wIniFile* ini, proxyConfig* config)
 {
 	const char* target_host;
 
+	WINPR_ASSERT(config);
 	if (!pf_config_get_uint16(ini, "Target", "Port", &config->TargetPort))
 		return FALSE;
 
@@ -164,6 +171,7 @@ static BOOL pf_config_load_target(wIniFile* ini, proxyConfig* config)
 
 static BOOL pf_config_load_channels(wIniFile* ini, proxyConfig* config)
 {
+	WINPR_ASSERT(config);
 	config->GFX = pf_config_get_bool(ini, "Channels", "GFX");
 	config->DisplayControl = pf_config_get_bool(ini, "Channels", "DisplayControl");
 	config->Clipboard = pf_config_get_bool(ini, "Channels", "Clipboard");
@@ -192,6 +200,7 @@ static BOOL pf_config_load_channels(wIniFile* ini, proxyConfig* config)
 
 static BOOL pf_config_load_input(wIniFile* ini, proxyConfig* config)
 {
+	WINPR_ASSERT(config);
 	config->Keyboard = pf_config_get_bool(ini, "Input", "Keyboard");
 	config->Mouse = pf_config_get_bool(ini, "Input", "Mouse");
 	return TRUE;
@@ -199,6 +208,7 @@ static BOOL pf_config_load_input(wIniFile* ini, proxyConfig* config)
 
 static BOOL pf_config_load_security(wIniFile* ini, proxyConfig* config)
 {
+	WINPR_ASSERT(config);
 	config->ServerTlsSecurity = pf_config_get_bool(ini, "Security", "ServerTlsSecurity");
 	config->ServerRdpSecurity = pf_config_get_bool(ini, "Security", "ServerRdpSecurity");
 
@@ -212,6 +222,7 @@ static BOOL pf_config_load_security(wIniFile* ini, proxyConfig* config)
 
 static BOOL pf_config_load_clipboard(wIniFile* ini, proxyConfig* config)
 {
+	WINPR_ASSERT(config);
 	config->TextOnly = pf_config_get_bool(ini, "Clipboard", "TextOnly");
 
 	if (!pf_config_get_uint32(ini, "Clipboard", "MaxTextLength", &config->MaxTextLength))
@@ -228,6 +239,7 @@ static BOOL pf_config_load_modules(wIniFile* ini, proxyConfig* config)
 	modules_to_load = IniFile_GetKeyValueString(ini, "Plugins", "Modules");
 	required_modules = IniFile_GetKeyValueString(ini, "Plugins", "Required");
 
+	WINPR_ASSERT(config);
 	config->Modules = pf_config_parse_comma_separated_list(modules_to_load, &config->ModulesCount);
 
 	config->RequiredPlugins =
@@ -237,13 +249,16 @@ static BOOL pf_config_load_modules(wIniFile* ini, proxyConfig* config)
 
 static BOOL pf_config_load_gfx_settings(wIniFile* ini, proxyConfig* config)
 {
+	WINPR_ASSERT(config);
 	config->DecodeGFX = pf_config_get_bool(ini, "GFXSettings", "DecodeGFX");
 	return TRUE;
 }
 
-static proxyConfig* server_config_load_ini(wIniFile* ini)
+proxyConfig* server_config_load_ini(wIniFile* ini)
 {
 	proxyConfig* config = NULL;
+
+	WINPR_ASSERT(ini);
 
 	config = calloc(1, sizeof(proxyConfig));
 	if (config)
@@ -281,12 +296,14 @@ out:
 proxyConfig* pf_server_config_load_buffer(const char* buffer)
 {
 	proxyConfig* config = NULL;
-	wIniFile* ini = IniFile_New();
+	wIniFile* ini;
+
+	ini = IniFile_New();
 
 	if (!ini)
 	{
 		WLog_ERR(TAG, "[%s]: IniFile_New() failed!", __FUNCTION__);
-		return FALSE;
+		return NULL;
 	}
 
 	if (IniFile_ReadBuffer(ini, buffer) < 0)
@@ -301,7 +318,6 @@ out:
 	return config;
 }
 
-
 proxyConfig* pf_server_config_load_file(const char* path)
 {
 	proxyConfig* config = NULL;
@@ -310,7 +326,7 @@ proxyConfig* pf_server_config_load_file(const char* path)
 	if (!ini)
 	{
 		WLog_ERR(TAG, "[%s]: IniFile_New() failed!", __FUNCTION__);
-		return FALSE;
+		return NULL;
 	}
 
 	if (IniFile_ReadFile(ini, path) < 0)
@@ -329,12 +345,14 @@ static void pf_server_config_print_list(char** list, size_t count)
 {
 	size_t i;
 
+	WINPR_ASSERT(list);
 	for (i = 0; i < count; i++)
 		WLog_INFO(TAG, "\t\t- %s", list[i]);
 }
 
 void pf_server_config_print(const proxyConfig* config)
 {
+	WINPR_ASSERT(config);
 	WLog_INFO(TAG, "Proxy configuration:");
 
 	CONFIG_PRINT_SECTION("Server");
