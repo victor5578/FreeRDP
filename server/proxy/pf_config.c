@@ -106,7 +106,7 @@ static BOOL pf_config_get_uint32(wIniFile* ini, const char* section, const char*
 	return TRUE;
 }
 
-static BOOL pf_config_get_bool(wIniFile* ini, const char* section, const char* key)
+static BOOL pf_config_get_bool(wIniFile* ini, const char* section, const char* key, BOOL fallback)
 {
 	int num_value;
 	const char* str_value;
@@ -114,17 +114,17 @@ static BOOL pf_config_get_bool(wIniFile* ini, const char* section, const char* k
 	str_value = IniFile_GetKeyValueString(ini, section, key);
 	if (!str_value)
 	{
-		WLog_WARN(TAG, "[%s]: key '%s.%s' not found, value defaults to false.", __FUNCTION__,
-		          section, key);
-		return FALSE;
+		WLog_WARN(TAG, "[%s]: key '%s.%s' not found, value defaults to %s.", __FUNCTION__, section,
+		          key, fallback ? "true" : "false");
+		return fallback;
 	}
 
-	if (strcmp(str_value, "TRUE") == 0 || strcmp(str_value, "true") == 0)
+	if (_stricmp(str_value, "TRUE") == 0)
 		return TRUE;
 
 	num_value = IniFile_GetKeyValueInt(ini, section, key);
 
-	if (num_value == 1)
+	if (num_value != 1)
 		return TRUE;
 
 	return FALSE;
@@ -173,7 +173,7 @@ static BOOL pf_config_load_target(wIniFile* ini, proxyConfig* config)
 	const char* target_host;
 
 	WINPR_ASSERT(config);
-	config->FixedTarget = pf_config_get_bool(ini, "Target", "FixedTarget");
+	config->FixedTarget = pf_config_get_bool(ini, "Target", "FixedTarget", FALSE);
 
 	if (!pf_config_get_uint16(ini, "Target", "Port", &config->TargetPort, config->FixedTarget))
 		return FALSE;
@@ -193,11 +193,11 @@ static BOOL pf_config_load_target(wIniFile* ini, proxyConfig* config)
 static BOOL pf_config_load_channels(wIniFile* ini, proxyConfig* config)
 {
 	WINPR_ASSERT(config);
-	config->GFX = pf_config_get_bool(ini, "Channels", "GFX");
-	config->DisplayControl = pf_config_get_bool(ini, "Channels", "DisplayControl");
-	config->Clipboard = pf_config_get_bool(ini, "Channels", "Clipboard");
-	config->AudioOutput = pf_config_get_bool(ini, "Channels", "AudioOutput");
-	config->RemoteApp = pf_config_get_bool(ini, "Channels", "RemoteApp");
+	config->GFX = pf_config_get_bool(ini, "Channels", "GFX", TRUE);
+	config->DisplayControl = pf_config_get_bool(ini, "Channels", "DisplayControl", TRUE);
+	config->Clipboard = pf_config_get_bool(ini, "Channels", "Clipboard", FALSE);
+	config->AudioOutput = pf_config_get_bool(ini, "Channels", "AudioOutput", TRUE);
+	config->RemoteApp = pf_config_get_bool(ini, "Channels", "RemoteApp", FALSE);
 	config->Passthrough = pf_config_parse_comma_separated_list(
 	    pf_config_get_str(ini, "Channels", "Passthrough", FALSE), &config->PassthroughCount);
 
@@ -222,29 +222,29 @@ static BOOL pf_config_load_channels(wIniFile* ini, proxyConfig* config)
 static BOOL pf_config_load_input(wIniFile* ini, proxyConfig* config)
 {
 	WINPR_ASSERT(config);
-	config->Keyboard = pf_config_get_bool(ini, "Input", "Keyboard");
-	config->Mouse = pf_config_get_bool(ini, "Input", "Mouse");
+	config->Keyboard = pf_config_get_bool(ini, "Input", "Keyboard", TRUE);
+	config->Mouse = pf_config_get_bool(ini, "Input", "Mouse", TRUE);
 	return TRUE;
 }
 
 static BOOL pf_config_load_security(wIniFile* ini, proxyConfig* config)
 {
 	WINPR_ASSERT(config);
-	config->ServerTlsSecurity = pf_config_get_bool(ini, "Security", "ServerTlsSecurity");
-	config->ServerRdpSecurity = pf_config_get_bool(ini, "Security", "ServerRdpSecurity");
+	config->ServerTlsSecurity = pf_config_get_bool(ini, "Security", "ServerTlsSecurity", TRUE);
+	config->ServerRdpSecurity = pf_config_get_bool(ini, "Security", "ServerRdpSecurity", TRUE);
 
-	config->ClientTlsSecurity = pf_config_get_bool(ini, "Security", "ClientTlsSecurity");
-	config->ClientNlaSecurity = pf_config_get_bool(ini, "Security", "ClientNlaSecurity");
-	config->ClientRdpSecurity = pf_config_get_bool(ini, "Security", "ClientRdpSecurity");
+	config->ClientTlsSecurity = pf_config_get_bool(ini, "Security", "ClientTlsSecurity", TRUE);
+	config->ClientNlaSecurity = pf_config_get_bool(ini, "Security", "ClientNlaSecurity", TRUE);
+	config->ClientRdpSecurity = pf_config_get_bool(ini, "Security", "ClientRdpSecurity", TRUE);
 	config->ClientAllowFallbackToTls =
-	    pf_config_get_bool(ini, "Security", "ClientAllowFallbackToTls");
+	    pf_config_get_bool(ini, "Security", "ClientAllowFallbackToTls", TRUE);
 	return TRUE;
 }
 
 static BOOL pf_config_load_clipboard(wIniFile* ini, proxyConfig* config)
 {
 	WINPR_ASSERT(config);
-	config->TextOnly = pf_config_get_bool(ini, "Clipboard", "TextOnly");
+	config->TextOnly = pf_config_get_bool(ini, "Clipboard", "TextOnly", FALSE);
 
 	if (!pf_config_get_uint32(ini, "Clipboard", "MaxTextLength", &config->MaxTextLength, FALSE))
 		return FALSE;
@@ -271,7 +271,7 @@ static BOOL pf_config_load_modules(wIniFile* ini, proxyConfig* config)
 static BOOL pf_config_load_gfx_settings(wIniFile* ini, proxyConfig* config)
 {
 	WINPR_ASSERT(config);
-	config->DecodeGFX = pf_config_get_bool(ini, "GFXSettings", "DecodeGFX");
+	config->DecodeGFX = pf_config_get_bool(ini, "GFXSettings", "DecodeGFX", FALSE);
 	return TRUE;
 }
 
