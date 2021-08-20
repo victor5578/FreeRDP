@@ -36,7 +36,7 @@
 
 #define BUFSIZE 8092
 
-static const proxyPluginsManager* g_plugins_manager = NULL;
+static proxyPluginsManager* g_plugins_manager = NULL;
 static captureConfig cconfig = { 0 };
 
 static SOCKET capture_plugin_init_socket(void)
@@ -114,7 +114,7 @@ static SOCKET capture_plugin_get_socket(proxyData* pdata)
 {
 	void* custom;
 
-	custom = g_plugins_manager->GetPluginData(PLUGIN_NAME, pdata);
+	custom = g_plugins_manager->GetPluginData(g_plugins_manager, PLUGIN_NAME, pdata);
 	if (!custom)
 		return -1;
 
@@ -218,7 +218,7 @@ static BOOL capture_plugin_client_post_connect(proxyData* pdata)
 		return FALSE;
 	}
 
-	g_plugins_manager->SetPluginData(PLUGIN_NAME, pdata, (void*)socket);
+	g_plugins_manager->SetPluginData(g_plugins_manager, PLUGIN_NAME, pdata, (void*)socket);
 
 	s = capture_plugin_create_session_info_packet(pdata->pc);
 	if (!s)
@@ -249,7 +249,7 @@ static BOOL capture_plugin_server_post_connect(proxyData* pdata)
 	return TRUE;
 }
 
-static BOOL capture_plugin_unload(proxyPlugin* plugin, proxyModule* module, void* userdata)
+static BOOL capture_plugin_unload(proxyPlugin* plugin, void* userdata)
 {
 	capture_plugin_config_free_internal(&cconfig);
 	return TRUE;
@@ -274,8 +274,7 @@ static proxyPlugin demo_plugin = {
 	NULL                                /* ServerFetchTargetAddr */
 };
 
-BOOL proxy_module_entry_point(const proxyPluginsManager* plugins_manager, proxyModule* module,
-                              void* userdata)
+BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, void* userdata)
 {
 	g_plugins_manager = plugins_manager;
 
@@ -286,5 +285,5 @@ BOOL proxy_module_entry_point(const proxyPluginsManager* plugins_manager, proxyM
 	}
 
 	WLog_INFO(TAG, "host: %s, port: %" PRIu16 "", cconfig.host, cconfig.port);
-	return plugins_manager->RegisterPlugin(&demo_plugin, module, userdata);
+	return plugins_manager->RegisterPlugin(plugins_manager, &demo_plugin, userdata);
 }

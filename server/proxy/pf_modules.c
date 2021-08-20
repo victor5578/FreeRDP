@@ -45,6 +45,7 @@ typedef struct proxy_plugin_internal
 
 struct proxy_module
 {
+	proxyPluginsManager mgr;
 	wArrayList* plugins;
 	wArrayList* handles;
 };
@@ -220,7 +221,8 @@ BOOL pf_modules_run_filter(proxyModule* module, PF_FILTER_TYPE type, proxyData* 
  * @context: current session server's rdpContext instance.
  * @info: pointer to per-session data.
  */
-static BOOL pf_modules_set_plugin_data(const char* plugin_name, proxyData* pdata, void* data)
+static BOOL pf_modules_set_plugin_data(proxyPluginsManager* mgr, const char* plugin_name,
+                                       proxyData* pdata, void* data)
 {
 	union {
 		const char* ccp;
@@ -249,7 +251,8 @@ static BOOL pf_modules_set_plugin_data(const char* plugin_name, proxyData* pdata
  * if there's no data related to `plugin_name` in `context` (current session), a NULL will be
  * returned.
  */
-static void* pf_modules_get_plugin_data(const char* plugin_name, proxyData* pdata)
+static void* pf_modules_get_plugin_data(proxyPluginsManager* mgr, const char* plugin_name,
+                                        proxyData* pdata)
 {
 	union {
 		const char* ccp;
@@ -262,7 +265,7 @@ static void* pf_modules_get_plugin_data(const char* plugin_name, proxyData* pdat
 	return HashTable_GetItemValue(pdata->modules_info, ccharconv.cp);
 }
 
-static void pf_modules_abort_connect(proxyData* pdata)
+static void pf_modules_abort_connect(proxyPluginsManager* mgr, proxyData* pdata)
 {
 	WINPR_ASSERT(pdata);
 	WLog_DBG(TAG, "%s is called!", __FUNCTION__);
@@ -285,10 +288,11 @@ static BOOL pf_modules_register_ArrayList_ForEachFkt(void* data, size_t index, v
 	return TRUE;
 }
 
-static BOOL pf_modules_register_plugin(const proxyPlugin* plugin_to_register, proxyModule* module,
-                                       void* userdata)
+static BOOL pf_modules_register_plugin(proxyPluginsManager* mgr,
+                                       const proxyPlugin* plugin_to_register, void* userdata)
 {
 	proxyPluginInternal internal = { 0 };
+	proxyModule* module = (proxyModule*)mgr;
 	WINPR_ASSERT(module);
 
 	if (!plugin_to_register)
@@ -357,11 +361,6 @@ void pf_modules_list_loaded_plugins(proxyModule* module)
 	ArrayList_ForEach(module->plugins, pf_modules_print_ArrayList_ForEachFkt);
 }
 
-static const proxyPluginsManager plugins_manager = { pf_modules_register_plugin,
-	                                                 pf_modules_set_plugin_data,
-	                                                 pf_modules_get_plugin_data,
-	                                                 pf_modules_abort_connect };
-
 static BOOL pf_modules_load_module(const char* module_path, proxyModule* module, void* userdata)
 {
 	HMODULE handle = NULL;
@@ -405,8 +404,7 @@ static void free_plugin(void* obj)
 	proxyPluginInternal* plugin = (proxyPluginInternal*)obj;
 	WINPR_ASSERT(plugin);
 
-	if (!IFCALLRESULT(TRUE, plugin->plugin.PluginUnload, &plugin->plugin, plugin->module,
-	                  plugin->userdata))
+	if (!IFCALLRESULT(TRUE, plugin->plugin.PluginUnload, &plugin->plugin, plugin->userdata))
 		WLog_WARN(TAG, "PluginUnload failed for plugin '%s'", plugin->plugin.name);
 }
 
@@ -417,6 +415,10 @@ proxyModule* pf_modules_new(const char* root_dir, const char** modules, size_t c
 	if (!module)
 		return NULL;
 
+	module->mgr.RegisterPlugin = pf_modules_register_plugin;
+	module->mgr.SetPluginData = pf_modules_set_plugin_data;
+	module->mgr.GetPluginData = pf_modules_get_plugin_data;
+	module->mgr.AbortConnect = pf_modules_abort_connect;
 	module->plugins = ArrayList_New(FALSE);
 
 	if (module->plugins == NULL)
@@ -478,5 +480,5 @@ BOOL pf_modules_add(proxyModule* module, proxyModuleEntryPoint ep, void* userdat
 	WINPR_ASSERT(module);
 	WINPR_ASSERT(ep);
 
-	return ep(&plugins_manager, module, userdata);
+	return ep(&module->mgr, userdata);
 }

@@ -27,7 +27,6 @@
 #define MODULE_TAG(module) "proxy.modules." module
 
 typedef struct proxy_data proxyData;
-typedef struct proxy_module proxyModule;
 
 /* hook callback. should return TRUE on success or FALSE on error. */
 typedef BOOL (*proxyHookFn)(proxyData*);
@@ -45,7 +44,7 @@ typedef struct proxy_plugin
 	const char* name;        /* unique module name */
 	const char* description; /* module description */
 
-	BOOL (*PluginUnload)(struct proxy_plugin* plugin, proxyModule* module, void* userdata);
+	BOOL (*PluginUnload)(struct proxy_plugin* plugin, void* userdata);
 
 	/* proxy hooks. a module can set these function pointers to register hooks */
 	proxyHookFn ClientPreConnect;
@@ -75,20 +74,20 @@ typedef struct proxy_plugin
 typedef struct proxy_plugins_manager
 {
 	/* used for registering a fresh new proxy plugin. */
-	BOOL (*RegisterPlugin)(const proxyPlugin* plugin, proxyModule* module, void* userdata);
+	BOOL(*RegisterPlugin)
+	(struct proxy_plugins_manager* mgr, const proxyPlugin* plugin, void* userdata);
 
 	/* used for setting plugin's per-session info. */
-	BOOL (*SetPluginData)(const char*, proxyData*, void*);
+	BOOL (*SetPluginData)(struct proxy_plugins_manager* mgr, const char*, proxyData*, void*);
 
 	/* used for getting plugin's per-session info. */
-	void* (*GetPluginData)(const char*, proxyData*);
+	void* (*GetPluginData)(struct proxy_plugins_manager* mgr, const char*, proxyData*);
 
 	/* used for aborting a session. */
-	void (*AbortConnect)(proxyData*);
+	void (*AbortConnect)(struct proxy_plugins_manager* mgr, proxyData*);
 } proxyPluginsManager;
 
-typedef BOOL (*proxyModuleEntryPoint)(const proxyPluginsManager* plugins_manager,
-                                      proxyModule* module, void* userdata);
+typedef BOOL (*proxyModuleEntryPoint)(proxyPluginsManager* plugins_manager, void* userdata);
 
 /* filter events parameters */
 #define WINPR_PACK_PUSH
@@ -145,8 +144,7 @@ extern "C"
 {
 #endif
 
-	FREERDP_API BOOL proxy_module_entry_point(const proxyPluginsManager* plugins_manager,
-	                                          proxyModule* module, void* userdata);
+	FREERDP_API BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, void* userdata);
 
 #ifdef __cplusplus
 };

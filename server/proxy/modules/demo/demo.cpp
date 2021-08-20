@@ -26,7 +26,7 @@
 static constexpr char plugin_name[] = "demo";
 static constexpr char plugin_desc[] = "this is a test plugin";
 
-static const proxyPluginsManager* g_plugins_manager = NULL;
+static proxyPluginsManager* g_plugins_manager = NULL;
 
 static BOOL demo_filter_keyboard_event(proxyData* pdata, void* param)
 {
@@ -38,13 +38,13 @@ static BOOL demo_filter_keyboard_event(proxyData* pdata, void* param)
 	{
 		/* user typed 'B', that means bye :) */
 		std::cout << "C++ demo plugin: aborting connection" << std::endl;
-		g_plugins_manager->AbortConnect(pdata);
+		g_plugins_manager->AbortConnect(g_plugins_manager, pdata);
 	}
 
 	return TRUE;
 }
 
-static BOOL demo_plugin_unload(proxyPlugin* plugin, proxyModule* module, void* userdata)
+static BOOL demo_plugin_unload(proxyPlugin* plugin, void* userdata)
 {
 	std::cout << "C++ demo plugin: unloading..." << std::endl;
 	return TRUE;
@@ -69,10 +69,9 @@ static const proxyPlugin demo_plugin = {
 	NULL                        /* ServerFetchTargetAddr */
 };
 
-BOOL proxy_module_entry_point(const proxyPluginsManager* plugins_manager, proxyModule* module,
-                              void* userdata)
+BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, void* userdata)
 {
 	g_plugins_manager = plugins_manager;
 
-	return plugins_manager->RegisterPlugin(&demo_plugin, module, userdata);
+	return plugins_manager->RegisterPlugin(plugins_manager, &demo_plugin, userdata);
 }
