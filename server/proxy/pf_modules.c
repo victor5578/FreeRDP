@@ -26,10 +26,10 @@
 #include <freerdp/api.h>
 #include <freerdp/build-config.h>
 
-#include <freerdp/server/proxy/proxy_modules.h>
 #include <freerdp/server/proxy/proxy_log.h>
 
 #include "pf_context.h"
+#include "proxy_modules.h"
 
 #define TAG PROXY_TAG("modules")
 

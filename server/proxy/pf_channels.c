@@ -31,7 +31,6 @@
 #include <freerdp/client/rdpgfx.h>
 #include <freerdp/client/disp.h>
 
-#include <freerdp/server/proxy/proxy_modules.h>
 #include <freerdp/server/proxy/proxy_log.h>
 
 #include "pf_channels.h"
@@ -41,6 +40,7 @@
 #include "pf_rdpgfx.h"
 #include "pf_cliprdr.h"
 #include "pf_disp.h"
+#include "proxy_modules.h"
 
 #include "pf_rdpsnd.h"
 

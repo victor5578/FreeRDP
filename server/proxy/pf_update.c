@@ -24,11 +24,11 @@
 #include <winpr/image.h>
 #include <winpr/sysinfo.h>
 
-#include <freerdp/server/proxy/proxy_modules.h>
 #include <freerdp/server/proxy/proxy_log.h>
 
 #include "pf_update.h"
 #include "pf_context.h"
+#include "proxy_modules.h"
 
 #define TAG PROXY_TAG("update")
 

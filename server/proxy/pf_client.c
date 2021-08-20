@@ -27,7 +27,6 @@
 #include <freerdp/gdi/gdi.h>
 #include <freerdp/client/cmdline.h>
 
-#include <freerdp/server/proxy/proxy_modules.h>
 #include <freerdp/server/proxy/proxy_log.h>
 
 #include "pf_channels.h"
@@ -37,6 +36,7 @@
 #include "pf_context.h"
 #include "pf_update.h"
 #include "pf_input.h"
+#include "proxy_modules.h"
 
 #define TAG PROXY_TAG("client")
 

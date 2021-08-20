@@ -24,8 +24,6 @@
 #include <winpr/wtypes.h>
 #include <winpr/collections.h>
 
-#include <freerdp/api.h>
-
 #include <freerdp/server/proxy/proxy_modules_api.h>
 
 enum _PF_FILTER_TYPE
@@ -64,24 +62,23 @@ extern "C"
 {
 #endif
 
-	FREERDP_API proxyModule* pf_modules_new(const char* root_dir, const char** modules,
-	                                        size_t count);
+	proxyModule* pf_modules_new(const char* root_dir, const char** modules, size_t count);
 
 	/**
 	 * @brief pf_modules_add Registers a new plugin
 	 * @param ep A module entry point function, must NOT be NULL
 	 * @return TRUE for success, FALSE otherwise
 	 */
-	FREERDP_API BOOL pf_modules_add(proxyModule* module, proxyModuleEntryPoint ep, void* userdata);
+	BOOL pf_modules_add(proxyModule* module, proxyModuleEntryPoint ep, void* userdata);
 
-	FREERDP_API BOOL pf_modules_is_plugin_loaded(proxyModule* module, const char* plugin_name);
-	FREERDP_API void pf_modules_list_loaded_plugins(proxyModule* module);
+	BOOL pf_modules_is_plugin_loaded(proxyModule* module, const char* plugin_name);
+	void pf_modules_list_loaded_plugins(proxyModule* module);
 
-	FREERDP_API BOOL pf_modules_run_filter(proxyModule* module, PF_FILTER_TYPE type,
-	                                       proxyData* pdata, void* param);
-	FREERDP_API BOOL pf_modules_run_hook(proxyModule* module, PF_HOOK_TYPE type, proxyData* pdata);
+	BOOL pf_modules_run_filter(proxyModule* module, PF_FILTER_TYPE type, proxyData* pdata,
+	                           void* param);
+	BOOL pf_modules_run_hook(proxyModule* module, PF_HOOK_TYPE type, proxyData* pdata);
 
-	FREERDP_API void pf_modules_free(proxyModule* module);
+	void pf_modules_free(proxyModule* module);
 
 #ifdef __cplusplus
 }

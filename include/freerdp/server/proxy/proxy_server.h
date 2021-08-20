@@ -22,7 +22,7 @@
 
 #include <freerdp/api.h>
 #include <freerdp/server/proxy/proxy_config.h>
-#include <freerdp/server/proxy/proxy_modules.h>
+#include <freerdp/server/proxy/proxy_modules_api.h>
 
 typedef struct proxy_server proxyServer;
 
@@ -31,9 +31,22 @@ extern "C"
 {
 #endif
 
-	FREERDP_API proxyServer* pf_server_new(const proxyConfig* config, proxyModule* module);
-
+	FREERDP_API proxyServer* pf_server_new(const proxyConfig* config);
 	FREERDP_API void pf_server_free(proxyServer* server);
+
+	/**
+	 * @brief pf_server_add_module Allows registering proxy modules that are
+	 *                             build-in instead of shipped as separate
+	 *                             module loaded at runtime.
+	 *
+	 * @param server A proxy instance to add the module to. Must NOT be NULL
+	 * @param ep     The proxy entry function to add. Must NOT be NULL
+	 * @param userdata Custom data for the module. May be NULL
+	 *
+	 * @return TRUE for success, FALSE otherwise.
+	 */
+	FREERDP_API BOOL pf_server_add_module(proxyServer* server, proxyModuleEntryPoint ep,
+	                                      void* userdata);
 
 	FREERDP_API BOOL pf_server_start(proxyServer* server);
 	FREERDP_API BOOL pf_server_start_from_socket(proxyServer* server, int socket);

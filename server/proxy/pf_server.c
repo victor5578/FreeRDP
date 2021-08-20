@@ -30,9 +30,9 @@
 #include <freerdp/freerdp.h>
 #include <freerdp/channels/wtsvc.h>
 #include <freerdp/channels/channels.h>
+#include <freerdp/build-config.h>
 
 #include <freerdp/server/proxy/proxy_server.h>
-#include <freerdp/server/proxy/proxy_modules.h>
 #include <freerdp/server/proxy/proxy_log.h>
 
 #include "pf_server.h"
@@ -44,6 +44,7 @@
 #include "pf_disp.h"
 #include "pf_rail.h"
 #include "pf_channels.h"
+#include "proxy_modules.h"
 
 #define TAG PROXY_TAG("server")
 
@@ -623,7 +624,25 @@ static void pf_server_clients_list_client_free(void* obj)
 	proxy_data_abort_connect(pdata);
 }
 
-proxyServer* pf_server_new(const proxyConfig* config, proxyModule* module)
+static BOOL are_all_required_modules_loaded(proxyModule* module, const proxyConfig* config)
+{
+	size_t i;
+
+	for (i = 0; i < pf_config_required_plugins_count(config); i++)
+	{
+		const char* plugin_name = pf_config_required_plugin(config, i);
+
+		if (!pf_modules_is_plugin_loaded(module, plugin_name))
+		{
+			WLog_ERR(TAG, "Required plugin '%s' is not loaded. stopping.", plugin_name);
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
+proxyServer* pf_server_new(const proxyConfig* config)
 {
 	wObject* obj;
 	proxyServer* server;
@@ -636,7 +655,17 @@ proxyServer* pf_server_new(const proxyConfig* config, proxyModule* module)
 		return NULL;
 
 	server->config = config;
-	server->module = module;
+	server->module = pf_modules_new(FREERDP_PROXY_PLUGINDIR, pf_config_modules(config),
+	                                pf_config_modules_count(config));
+	if (!server->module)
+	{
+		WLog_ERR(TAG, "failed to initialize proxy modules!");
+		goto out;
+	}
+
+	pf_modules_list_loaded_plugins(server->module);
+	if (!are_all_required_modules_loaded(server->module, server->config))
+		goto out;
 
 	server->stopEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	if (!server->stopEvent)
@@ -710,5 +739,14 @@ void pf_server_free(proxyServer* server)
 	if (server->thread)
 		CloseHandle(server->thread);
 
+	pf_modules_free(server->module);
 	free(server);
+}
+
+BOOL pf_server_add_module(proxyServer* server, proxyModuleEntryPoint ep, void* userdata)
+{
+	WINPR_ASSERT(server);
+	WINPR_ASSERT(ep);
+
+	return pf_modules_add(server->module, ep, userdata);
 }

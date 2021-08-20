@@ -23,10 +23,8 @@
 
 #include <freerdp/version.h>
 #include <freerdp/freerdp.h>
-#include <freerdp/build-config.h>
 
 #include <freerdp/server/proxy/proxy_server.h>
-#include <freerdp/server/proxy/proxy_modules.h>
 #include <freerdp/server/proxy/proxy_log.h>
 
 #include <stdlib.h>
@@ -55,27 +53,8 @@ static void pf_server_register_signal_handlers(void)
 #endif
 }
 
-static BOOL is_all_required_modules_loaded(proxyModule* module, proxyConfig* config)
-{
-	size_t i;
-
-	for (i = 0; i < pf_config_required_plugins_count(config); i++)
-	{
-		const char* plugin_name = pf_config_required_plugin(config, i);
-
-		if (!pf_modules_is_plugin_loaded(module, plugin_name))
-		{
-			WLog_ERR(TAG, "Required plugin '%s' is not loaded. stopping.", plugin_name);
-			return FALSE;
-		}
-	}
-
-	return TRUE;
-}
-
 int main(int argc, char* argv[])
 {
-	proxyModule* module = NULL;
 	proxyConfig* config = NULL;
 	char* config_path = "config.ini";
 	int status = -1;
@@ -94,21 +73,9 @@ int main(int argc, char* argv[])
 
 	pf_server_config_print(config);
 
-	module = pf_modules_new(FREERDP_PROXY_PLUGINDIR, pf_config_modules(config),
-	                        pf_config_modules_count(config));
-	if (!module)
-	{
-		WLog_ERR(TAG, "failed to initialize proxy modules!");
-		goto fail;
-	}
-
-	pf_modules_list_loaded_plugins(module);
-	if (!is_all_required_modules_loaded(module, config))
-		goto fail;
-
 	pf_server_register_signal_handlers();
 
-	server = pf_server_new(config, module);
+	server = pf_server_new(config);
 	if (!server)
 		goto fail;
 
@@ -122,7 +89,6 @@ int main(int argc, char* argv[])
 
 fail:
 	pf_server_free(server);
-	pf_modules_free(module);
 	pf_server_config_free(config);
 
 	return status;
