@@ -67,8 +67,8 @@ typedef struct proxy_plugin
 
 	/* Runtime data fields */
 	proxyPluginsManager* mgr; /** Set during plugin registration */
-	void* userdata; /** Custom configuration data provided with RegisterPlugin, memory managed
-	                   outside of plugin */
+	void* userdata;           /** Custom data provided with RegisterPlugin, memory managed
+	                             outside of plugin. */
 	void* custom;   /** Custom configuration data, must be allocated in RegisterPlugin and freed in
 	                   PluginUnload */
 };

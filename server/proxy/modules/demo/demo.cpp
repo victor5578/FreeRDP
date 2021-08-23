@@ -37,7 +37,7 @@ static BOOL demo_filter_keyboard_event(proxyPlugin* plugin, proxyData* pdata, vo
 	mgr = plugin->mgr;
 	WINPR_ASSERT(mgr);
 
-	if (event_data == NULL)
+	if (event_data == nullptr)
 		return FALSE;
 
 	if (event_data->rdp_scan_code == RDP_SCANCODE_KEY_B)
@@ -73,22 +73,22 @@ FREERDP_API BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, 
 	proxyPlugin demo_plugin = { plugin_name,                /* name */
 		                        plugin_desc,                /* description */
 		                        demo_plugin_unload,         /* PluginUnload */
-		                        NULL,                       /* ClientPreConnect */
-		                        NULL,                       /* ClientPostConnect */
-		                        NULL,                       /* ClientLoginFailure */
-		                        NULL,                       /* ClientEndPaint */
-		                        NULL,                       /* ServerPostConnect */
-		                        NULL,                       /* ServerChannelsInit */
-		                        NULL,                       /* ServerChannelsFree */
-		                        NULL,                       /* ServerSessionEnd */
+		                        nullptr,                    /* ClientPreConnect */
+		                        nullptr,                    /* ClientPostConnect */
+		                        nullptr,                    /* ClientLoginFailure */
+		                        nullptr,                    /* ClientEndPaint */
+		                        nullptr,                    /* ServerPostConnect */
+		                        nullptr,                    /* ServerChannelsInit */
+		                        nullptr,                    /* ServerChannelsFree */
+		                        nullptr,                    /* ServerSessionEnd */
 		                        demo_filter_keyboard_event, /* KeyboardEvent */
-		                        NULL,                       /* MouseEvent */
-		                        NULL,                       /* ClientChannelData */
-		                        NULL,                       /* ServerChannelData */
-		                        NULL,                       /* ServerFetchTargetAddr */
-		                        NULL,
+		                        nullptr,                    /* MouseEvent */
+		                        nullptr,                    /* ClientChannelData */
+		                        nullptr,                    /* ServerChannelData */
+		                        nullptr,                    /* ServerFetchTargetAddr */
+		                        nullptr,
 		                        userdata,
-		                        NULL };
+		                        nullptr };
 
 	custom = (struct demo_custom_data*)calloc(1, sizeof(struct demo_custom_data));
 	if (!custom)
@@ -98,6 +98,7 @@ FREERDP_API BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, 
 	custom->somesetting = 42;
 
 	demo_plugin.custom = custom;
+	demo_plugin.userdata = userdata;
 
 	return plugins_manager->RegisterPlugin(plugins_manager, &demo_plugin);
 }
