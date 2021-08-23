@@ -245,13 +245,28 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
                                                 const BYTE* data, size_t size, UINT32 flags,
                                                 size_t totalSize)
 {
-	pClientContext* pc = (pClientContext*)instance->context;
-	pServerContext* ps = pc->pdata->ps;
-	proxyData* pdata = ps->pdata;
-	const proxyConfig* config = pdata->config;
+	const char* channel_name = freerdp_channels_get_name_by_id(instance, channelId);
+	pClientContext* pc;
+	pServerContext* ps;
+	proxyData* pdata;
+	const proxyConfig* config;
 	size_t i;
 
-	const char* channel_name = freerdp_channels_get_name_by_id(instance, channelId);
+	WINPR_ASSERT(instance);
+	WINPR_ASSERT(data || (size == 0));
+
+	pc = (pClientContext*)instance->context;
+	WINPR_ASSERT(pc);
+	WINPR_ASSERT(pc->pdata);
+
+	ps = pc->pdata->ps;
+	WINPR_ASSERT(ps);
+
+	pdata = ps->pdata;
+	WINPR_ASSERT(pdata);
+
+	config = pdata->config;
+	WINPR_ASSERT(config);
 
 	for (i = 0; i < config->PassthroughCount; i++)
 	{
