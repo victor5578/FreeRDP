@@ -72,7 +72,7 @@ static BOOL pf_modules_proxy_ArrayList_ForEachFkt(void* data, size_t index, va_l
 	proxyPlugin* plugin = (proxyPlugin*)data;
 	PF_HOOK_TYPE type;
 	proxyData* pdata;
-	BOOL ok = TRUE;
+	BOOL ok = FALSE;
 
 	WINPR_UNUSED(index);
 
@@ -84,35 +84,35 @@ static BOOL pf_modules_proxy_ArrayList_ForEachFkt(void* data, size_t index, va_l
 	switch (type)
 	{
 		case HOOK_TYPE_CLIENT_PRE_CONNECT:
-			IFCALLRET(plugin->ClientPreConnect, ok, plugin, pdata);
+			ok = IFCALLRESULT(TRUE, plugin->ClientPreConnect, plugin, pdata);
 			break;
 
 		case HOOK_TYPE_CLIENT_POST_CONNECT:
-			IFCALLRET(plugin->ClientPostConnect, ok, plugin, pdata);
+			ok = IFCALLRESULT(TRUE, plugin->ClientPostConnect, plugin, pdata);
 			break;
 
 		case HOOK_TYPE_CLIENT_LOGIN_FAILURE:
-			IFCALLRET(plugin->ClientLoginFailure, ok, plugin, pdata);
+			ok = IFCALLRESULT(TRUE, plugin->ClientLoginFailure, plugin, pdata);
 			break;
 
 		case HOOK_TYPE_CLIENT_END_PAINT:
-			IFCALLRET(plugin->ClientEndPaint, ok, plugin, pdata);
+			ok = IFCALLRESULT(TRUE, plugin->ClientEndPaint, plugin, pdata);
 			break;
 
 		case HOOK_TYPE_SERVER_POST_CONNECT:
-			IFCALLRET(plugin->ServerPostConnect, ok, plugin, pdata);
+			ok = IFCALLRESULT(TRUE, plugin->ServerPostConnect, plugin, pdata);
 			break;
 
 		case HOOK_TYPE_SERVER_CHANNELS_INIT:
-			IFCALLRET(plugin->ServerChannelsInit, ok, plugin, pdata);
+			ok = IFCALLRESULT(TRUE, plugin->ServerChannelsInit, plugin, pdata);
 			break;
 
 		case HOOK_TYPE_SERVER_CHANNELS_FREE:
-			IFCALLRET(plugin->ServerChannelsFree, ok, plugin, pdata);
+			ok = IFCALLRESULT(TRUE, plugin->ServerChannelsFree, plugin, pdata);
 			break;
 
 		case HOOK_TYPE_SERVER_SESSION_END:
-			IFCALLRET(plugin->ServerSessionEnd, ok, plugin, pdata);
+			ok = IFCALLRESULT(TRUE, plugin->ServerSessionEnd, plugin, pdata);
 			break;
 
 		case HOOK_LAST:
@@ -148,7 +148,7 @@ static BOOL pf_modules_ArrayList_ForEachFkt(void* data, size_t index, va_list ap
 	PF_FILTER_TYPE type;
 	proxyData* pdata;
 	void* param;
-	BOOL result = TRUE;
+	BOOL result = FALSE;
 
 	WINPR_UNUSED(index);
 
@@ -161,23 +161,23 @@ static BOOL pf_modules_ArrayList_ForEachFkt(void* data, size_t index, va_list ap
 	switch (type)
 	{
 		case FILTER_TYPE_KEYBOARD:
-			IFCALLRET(plugin->KeyboardEvent, result, plugin, pdata, param);
+			result = IFCALLRESULT(TRUE, plugin->KeyboardEvent, plugin, pdata, param);
 			break;
 
 		case FILTER_TYPE_MOUSE:
-			IFCALLRET(plugin->MouseEvent, result, plugin, pdata, param);
+			result = IFCALLRESULT(TRUE, plugin->MouseEvent, plugin, pdata, param);
 			break;
 
 		case FILTER_TYPE_CLIENT_PASSTHROUGH_CHANNEL_DATA:
-			IFCALLRET(plugin->ClientChannelData, result, plugin, pdata, param);
+			result = IFCALLRESULT(TRUE, plugin->ClientChannelData, plugin, pdata, param);
 			break;
 
 		case FILTER_TYPE_SERVER_PASSTHROUGH_CHANNEL_DATA:
-			IFCALLRET(plugin->ServerChannelData, result, plugin, pdata, param);
+			result = IFCALLRESULT(TRUE, plugin->ServerChannelData, plugin, pdata, param);
 			break;
 
 		case FILTER_TYPE_SERVER_FETCH_TARGET_ADDR:
-			IFCALLRET(plugin->ServerFetchTargetAddr, result, plugin, pdata, param);
+			result = IFCALLRESULT(TRUE, plugin->ServerFetchTargetAddr, plugin, pdata, param);
 			break;
 
 		case FILTER_LAST:
