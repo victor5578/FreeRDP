@@ -613,42 +613,20 @@ static BOOL pf_config_copy_string(char** dst, const char* src)
 
 static BOOL pf_config_copy_string_list(char*** dst, size_t* size, char** src, size_t srcSize)
 {
-	size_t x;
-	char** tmp = NULL;
-
 	WINPR_ASSERT(dst);
 	WINPR_ASSERT(size);
 	WINPR_ASSERT(src || (srcSize == 0));
 
-	if (srcSize > 0)
+	*dst = NULL;
+	*size = 0;
+	if (srcSize == 0)
+		return TRUE;
 	{
-		tmp = calloc(srcSize, sizeof(char*));
-		if (!tmp)
-			goto fail;
-		for (x = 0; x < srcSize; x++)
-		{
-			const char* s = src[x];
-			char* cpy;
-			if (!s)
-				continue;
-			cpy = _strdup(s);
-			if (!cpy)
-				goto fail;
-			tmp[x] = cpy;
-		}
+		char* csv = CommandLineToCommaSeparatedValues(srcSize, src);
+		*dst = CommandLineParseCommaSeparatedValues(csv, size);
 	}
-	*dst = tmp;
-	*size = srcSize;
-	return TRUE;
 
-fail:
-	if (tmp)
-	{
-		for (x = 0; x < srcSize; x++)
-			free(tmp[x]);
-	}
-	free(tmp);
-	return FALSE;
+	return TRUE;
 }
 
 BOOL pf_config_clone(proxyConfig** dst, const proxyConfig* config)
