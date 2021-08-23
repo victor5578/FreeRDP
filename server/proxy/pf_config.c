@@ -626,6 +626,7 @@ static BOOL pf_config_copy_string_list(char*** dst, size_t* size, char** src, si
 	{
 		char* csv = CommandLineToCommaSeparatedValues(srcSize, src);
 		*dst = CommandLineParseCommaSeparatedValues(csv, size);
+		free(csv);
 	}
 
 	return TRUE;
