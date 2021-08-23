@@ -121,10 +121,12 @@ static BOOL pf_config_get_bool(wIniFile* ini, const char* section, const char* k
 
 	if (_stricmp(str_value, "TRUE") == 0)
 		return TRUE;
+	if (_stricmp(str_value, "FALSE") == 0)
+		return FALSE;
 
 	num_value = IniFile_GetKeyValueInt(ini, section, key);
 
-	if (num_value != 1)
+	if (num_value != 0)
 		return TRUE;
 
 	return FALSE;
