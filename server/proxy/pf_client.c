@@ -40,8 +40,6 @@
 
 #define TAG PROXY_TAG("client")
 
-static pReceiveChannelData client_receive_channel_data_original = NULL;
-
 static BOOL proxy_server_reactivate(rdpContext* ps, const rdpContext* pc)
 {
 	if (!pf_context_copy_settings(ps->settings, pc->settings))
@@ -290,7 +288,9 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
 		}
 	}
 
-	return client_receive_channel_data_original(instance, channelId, data, size, flags, totalSize);
+	WINPR_ASSERT(pc->client_receive_channel_data_original);
+	return pc->client_receive_channel_data_original(instance, channelId, data, size, flags,
+	                                                totalSize);
 }
 
 static BOOL pf_client_on_server_heartbeat(freerdp* instance, BYTE period, BYTE count1, BYTE count2)
@@ -353,7 +353,7 @@ static BOOL pf_client_post_connect(freerdp* instance)
 	pf_client_register_update_callbacks(update);
 
 	/* virtual channels receive data hook */
-	client_receive_channel_data_original = instance->ReceiveChannelData;
+	pc->client_receive_channel_data_original = instance->ReceiveChannelData;
 	instance->ReceiveChannelData = pf_client_receive_channel_data_hook;
 
 	/* populate channel name -> channel ids map */
@@ -361,7 +361,7 @@ static BOOL pf_client_post_connect(freerdp* instance)
 		size_t i;
 		for (i = 0; i < config->PassthroughCount; i++)
 		{
-			char* channel_name = config->Passthrough[i];
+			const char* channel_name = config->Passthrough[i];
 			UINT64 channel_id = (UINT64)freerdp_channels_get_id_by_name(instance, channel_name);
 			HashTable_Insert(pc->vc_ids, (void*)channel_name, (void*)channel_id);
 		}

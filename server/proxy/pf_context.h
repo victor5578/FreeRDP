@@ -90,6 +90,7 @@ struct p_client_context
 	BOOL allow_next_conn_failure;
 
 	wHashTable* vc_ids; /* channel_name -> channel_id map */
+	pReceiveChannelData client_receive_channel_data_original;
 };
 typedef struct p_client_context pClientContext;
 
