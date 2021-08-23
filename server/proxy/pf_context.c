@@ -115,10 +115,33 @@ BOOL pf_context_init_server_context(freerdp_peer* client)
 	return freerdp_peer_context_new(client);
 }
 
+static BOOL pf_context_revert_str_settings(rdpSettings* dst, const rdpSettings* before, size_t nr,
+                                           const size_t* ids)
+{
+	size_t x;
+	WINPR_ASSERT(dst);
+	WINPR_ASSERT(before);
+	WINPR_ASSERT(ids || (nr == 0));
+
+	for (x = 0; x < nr; x++)
+	{
+		size_t id = ids[x];
+		const char* what = freerdp_settings_get_string(before, id);
+		if (!freerdp_settings_set_string(dst, id, what))
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
 BOOL pf_context_copy_settings(rdpSettings* dst, const rdpSettings* src)
 {
 	BOOL rc = FALSE;
 	rdpSettings* before_copy;
+	const size_t to_revert[] = { FreeRDP_ConfigPath,      FreeRDP_PrivateKeyContent,
+		                         FreeRDP_RdpKeyContent,   FreeRDP_RdpKeyFile,
+		                         FreeRDP_PrivateKeyFile,  FreeRDP_CertificateFile,
+		                         FreeRDP_CertificateName, FreeRDP_CertificateContent };
 
 	if (!dst || !src)
 		return FALSE;
@@ -126,12 +149,6 @@ BOOL pf_context_copy_settings(rdpSettings* dst, const rdpSettings* src)
 	before_copy = freerdp_settings_clone(dst);
 	if (!before_copy)
 		return FALSE;
-
-#define REVERT_STR_VALUE(name)                                          \
-	free(dst->name);                                                    \
-	dst->name = NULL;                                                   \
-	if (before_copy->name && !(dst->name = _strdup(before_copy->name))) \
-	goto out_fail
 
 	if (!freerdp_settings_copy(dst, src))
 	{
@@ -143,14 +160,8 @@ BOOL pf_context_copy_settings(rdpSettings* dst, const rdpSettings* src)
 	dst->ServerMode = before_copy->ServerMode;
 
 	/* revert some values that must not be changed */
-	REVERT_STR_VALUE(ConfigPath);
-	REVERT_STR_VALUE(PrivateKeyContent);
-	REVERT_STR_VALUE(RdpKeyContent);
-	REVERT_STR_VALUE(RdpKeyFile);
-	REVERT_STR_VALUE(PrivateKeyFile);
-	REVERT_STR_VALUE(CertificateFile);
-	REVERT_STR_VALUE(CertificateName);
-	REVERT_STR_VALUE(CertificateContent);
+	if (!pf_context_revert_str_settings(dst, before_copy, ARRAYSIZE(to_revert), to_revert))
+		return FALSE;
 
 	if (!dst->ServerMode)
 	{
