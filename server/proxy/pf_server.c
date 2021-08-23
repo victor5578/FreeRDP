@@ -345,20 +345,18 @@ static BOOL pf_server_initialize_peer_connection(freerdp_peer* peer)
 
 	settings->SupportMonitorLayoutPdu = TRUE;
 	settings->SupportGraphicsPipeline = config->GFX;
-	if (config->CertificateFile)
-		settings->CertificateFile = _strdup(config->CertificateFile);
-	if (config->CertificateContent)
-		settings->CertificateContent = _strdup(config->CertificateContent);
-
-	if (config->PrivateKeyFile)
-		settings->PrivateKeyFile = _strdup(config->PrivateKeyFile);
-	if (config->PrivateKeyContent)
-		settings->PrivateKeyContent = _strdup(config->PrivateKeyContent);
-
-	if (config->RdpKeyFile)
-		settings->RdpKeyFile = _strdup(config->RdpKeyFile);
-	if (config->RdpKeyContent)
-		settings->RdpKeyContent = _strdup(config->RdpKeyContent);
+	if (!freerdp_settings_set_string(settings, FreeRDP_CertificateFile, config->CertificateFile) ||
+	    !freerdp_settings_set_string(settings, FreeRDP_CertificateContent,
+	                                 config->CertificateContent) ||
+	    !freerdp_settings_set_string(settings, FreeRDP_PrivateKeyFile, config->PrivateKeyFile) ||
+	    !freerdp_settings_set_string(settings, FreeRDP_PrivateKeyContent,
+	                                 config->PrivateKeyContent) ||
+	    !freerdp_settings_set_string(settings, FreeRDP_RdpKeyFile, config->RdpKeyFile) ||
+	    !freerdp_settings_set_string(settings, FreeRDP_RdpKeyContent, config->RdpKeyContent))
+	{
+		WLog_ERR(TAG, "Memory allocation failed (strdup)");
+		return FALSE;
+	}
 
 	if (config->RemoteApp)
 	{
@@ -369,17 +367,6 @@ static BOOL pf_server_initialize_peer_connection(freerdp_peer* peer)
 		    RAIL_LEVEL_HIDE_MINIMIZED_APPS_SUPPORTED | RAIL_LEVEL_WINDOW_CLOAKING_SUPPORTED |
 		    RAIL_LEVEL_HANDSHAKE_EX_SUPPORTED;
 		settings->RemoteAppLanguageBarSupported = TRUE;
-	}
-
-	if ((config->CertificateFile && !settings->CertificateFile) ||
-	    (config->CertificateContent && !settings->CertificateContent) ||
-	    (config->PrivateKeyFile && !settings->PrivateKeyFile) ||
-	    (config->PrivateKeyContent && !settings->PrivateKeyContent) ||
-	    (config->RdpKeyFile && !settings->RdpKeyFile) ||
-	    (config->RdpKeyContent && !settings->RdpKeyContent))
-	{
-		WLog_ERR(TAG, "Memory allocation failed (strdup)");
-		return FALSE;
 	}
 
 	settings->RdpSecurity = config->ServerRdpSecurity;
