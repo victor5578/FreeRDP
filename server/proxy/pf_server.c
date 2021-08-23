@@ -371,7 +371,12 @@ static BOOL pf_server_initialize_peer_connection(freerdp_peer* peer)
 		settings->RemoteAppLanguageBarSupported = TRUE;
 	}
 
-	if (!settings->CertificateFile || !settings->PrivateKeyFile || !settings->RdpKeyFile)
+	if ((config->CertificateFile && !settings->CertificateFile) ||
+	    (config->CertificateContent && !settings->CertificateContent) ||
+	    (config->PrivateKeyFile && !settings->PrivateKeyFile) ||
+	    (config->PrivateKeyContent && !settings->PrivateKeyContent) ||
+	    (config->RdpKeyFile && !settings->RdpKeyFile) ||
+	    (config->RdpKeyContent && !settings->RdpKeyContent))
 	{
 		WLog_ERR(TAG, "Memory allocation failed (strdup)");
 		return FALSE;
