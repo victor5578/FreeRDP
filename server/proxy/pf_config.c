@@ -152,17 +152,17 @@ static BOOL pf_config_load_server(wIniFile* ini, proxyConfig* config)
 	const char* host;
 
 	WINPR_ASSERT(config);
-	if (!pf_config_get_uint16(ini, "Server", "Port", &config->Port, TRUE))
-		return FALSE;
-
-	host = pf_config_get_str(ini, "Server", "Host", TRUE);
+	host = pf_config_get_str(ini, "Server", "Host", FALSE);
 
 	if (!host)
-		return FALSE;
+		return TRUE;
 
 	config->Host = _strdup(host);
 
 	if (!config->Host)
+		return FALSE;
+
+	if (!pf_config_get_uint16(ini, "Server", "Port", &config->Port, TRUE))
 		return FALSE;
 
 	return TRUE;
