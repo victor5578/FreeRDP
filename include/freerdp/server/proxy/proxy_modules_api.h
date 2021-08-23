@@ -41,7 +41,7 @@ typedef BOOL (*proxyHookFn)(proxyPlugin*, proxyData*);
 typedef BOOL (*proxyFilterFn)(proxyPlugin*, proxyData*, void*);
 
 /* describes a plugin: name, description and callbacks to execute. */
-typedef struct proxy_plugin
+struct proxy_plugin
 {
 	const char* name;        /* unique module name */
 	const char* description; /* module description */
@@ -80,7 +80,7 @@ typedef struct proxy_plugin
  *  - Setting/getting plugin's per-session specific data.
  *  - Aborting a session.
  */
-typedef struct proxy_plugins_manager
+struct proxy_plugins_manager
 {
 	/* used for registering a fresh new proxy plugin. */
 	BOOL(*RegisterPlugin)

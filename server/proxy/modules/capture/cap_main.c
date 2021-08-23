@@ -39,14 +39,14 @@
 static SOCKET capture_plugin_init_socket(const captureConfig* cconfig)
 {
 	int status;
-	int sockfd;
+	SOCKET sockfd;
 	struct sockaddr_in addr = { 0 };
 
 	WINPR_ASSERT(cconfig);
 
 	sockfd = _socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-	if (sockfd == -1)
+	if (sockfd == (SOCKET)-1)
 		return -1;
 
 	addr.sin_family = AF_INET;
@@ -65,7 +65,6 @@ static SOCKET capture_plugin_init_socket(const captureConfig* cconfig)
 
 static BOOL capture_plugin_send_data(SOCKET sockfd, const BYTE* buffer, size_t len)
 {
-	size_t chunk_len;
 	int nsent;
 
 	if (!buffer)
@@ -73,7 +72,7 @@ static BOOL capture_plugin_send_data(SOCKET sockfd, const BYTE* buffer, size_t l
 
 	while (len > 0)
 	{
-		chunk_len = len > BUFSIZE ? BUFSIZE : len;
+		int chunk_len = len > BUFSIZE ? BUFSIZE : len;
 		nsent = _send(sockfd, (const char*)buffer, chunk_len, 0);
 		if (nsent == -1)
 			return FALSE;
@@ -283,7 +282,6 @@ static BOOL capture_plugin_unload(proxyPlugin* plugin)
 
 FREERDP_API BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, void* userdata)
 {
-
 	proxyPlugin demo_plugin = { PLUGIN_NAME,                        /* name */
 		                        PLUGIN_DESC,                        /* description */
 		                        capture_plugin_unload,              /* PluginUnload */
