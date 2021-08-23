@@ -173,10 +173,9 @@ BOOL pf_context_copy_settings(rdpSettings* dst, const rdpSettings* src)
 		 * it must be freed before setting it to NULL to avoid a memory leak!
 		 */
 
-		free(dst->RdpServerRsaKey->Modulus);
-		free(dst->RdpServerRsaKey->PrivateExponent);
-		free(dst->RdpServerRsaKey);
-		dst->RdpServerRsaKey = NULL;
+		if (!freerdp_settings_set_pointer_len(dst, FreeRDP_RdpServerRsaKey, NULL,
+		                                      sizeof(rdpRsaKey)))
+			goto out_fail;
 	}
 
 	rc = TRUE;
