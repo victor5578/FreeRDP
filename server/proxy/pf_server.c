@@ -689,7 +689,9 @@ proxyServer* pf_server_new(const proxyConfig* config)
 	if (!server)
 		return NULL;
 
-	server->config = config;
+	if (!pf_config_clone(&server->config, config))
+		goto out;
+
 	server->module = pf_modules_new(FREERDP_PROXY_PLUGINDIR, pf_config_modules(config),
 	                                pf_config_modules_count(config));
 	if (!server->module)
@@ -809,6 +811,7 @@ void pf_server_free(proxyServer* server)
 	if (server->stopEvent)
 		CloseHandle(server->stopEvent);
 
+	pf_server_config_free(server->config);
 	pf_modules_free(server->module);
 	free(server);
 }

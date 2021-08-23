@@ -31,7 +31,7 @@
 struct proxy_server
 {
 	proxyModule* module;
-	const proxyConfig* config;
+	proxyConfig* config;
 
 	freerdp_listener* listener;
 	wArrayList* clients;        /* maintain a list of active sessions, for stats */

@@ -108,6 +108,15 @@ extern "C"
 	 */
 	FREERDP_API const char** pf_config_modules(const proxyConfig* config);
 
+	/**
+	 * @brief pf_config_clone Create a copy of the configuration
+	 * @param dst A pointer that receives the newly allocated copy
+	 * @param config The source configuration to copy
+	 *
+	 * @return TRUE for success, FALSE otherwise
+	 */
+	FREERDP_API BOOL pf_config_clone(proxyConfig** dst, const proxyConfig* config);
+
 #ifdef __cplusplus
 };
 #endif
