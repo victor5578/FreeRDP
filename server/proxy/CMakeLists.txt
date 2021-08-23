@@ -100,8 +100,8 @@ if (WITH_DEBUG_SYMBOLS AND MSVC)
 endif()
 
 # pkg-config
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/freerdp-proxy.pc.in ${CMAKE_CURRENT_BINARY_DIR}/freerdp-proxy${FREERDP_VERSION_MAJOR}.pc @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/freerdp-proxy${FREERDP_VERSION_MAJOR}.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/freerdp-proxy.pc.in ${CMAKE_CURRENT_BINARY_DIR}/freerdp-server-proxy${FREERDP_VERSION_MAJOR}.pc @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/freerdp-server-proxy${FREERDP_VERSION_MAJOR}.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
 export(PACKAGE freerdp-proxy)
 
