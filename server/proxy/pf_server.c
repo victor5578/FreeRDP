@@ -646,7 +646,6 @@ BOOL pf_server_start_with_peer_socket(proxyServer* server, int peer_fd)
 
 fail:
 	WLog_ERR(TAG, "PeerAccepted callback failed");
-	close(peer_fd);
 	freerdp_peer_free(client);
 	return FALSE;
 }
