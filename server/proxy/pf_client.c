@@ -679,59 +679,6 @@ static int pf_logon_error_info(freerdp* instance, UINT32 data, UINT32 type)
 	return 1;
 }
 
-/**
- * Callback set in the rdp_freerdp structure, and used to make a certificate validation
- * when the connection requires it.
- * This function will actually be called by tls_verify_certificate().
- * @see rdp_client_connect() and tls_connect()
- * @param instance     pointer to the rdp_freerdp structure that contains the connection settings
- * @param host         The host currently connecting to
- * @param port         The port currently connecting to
- * @param common_name  The common name of the certificate, should match host or an alias of it
- * @param subject      The subject of the certificate
- * @param issuer       The certificate issuer name
- * @param fingerprint  The fingerprint of the certificate
- * @param flags        See VERIFY_CERT_FLAG_* for possible values.
- *
- * @return 1 if the certificate is trusted, 2 if temporary trusted, 0 otherwise.
- */
-static DWORD pf_client_verify_certificate_ex(freerdp* instance, const char* host, UINT16 port,
-                                             const char* common_name, const char* subject,
-                                             const char* issuer, const char* fingerprint,
-                                             DWORD flags)
-{
-	/* TODO: Add trust level to proxy configurable settings */
-	return 1;
-}
-
-/**
- * Callback set in the rdp_freerdp structure, and used to make a certificate validation
- * when a stored certificate does not match the remote counterpart.
- * This function will actually be called by tls_verify_certificate().
- * @see rdp_client_connect() and tls_connect()
- * @param instance        pointer to the rdp_freerdp structure that contains the connection settings
- * @param host            The host currently connecting to
- * @param port            The port currently connecting to
- * @param common_name     The common name of the certificate, should match host or an alias of it
- * @param subject         The subject of the certificate
- * @param issuer          The certificate issuer name
- * @param fingerprint     The fingerprint of the certificate
- * @param old_subject     The subject of the previous certificate
- * @param old_issuer      The previous certificate issuer name
- * @param old_fingerprint The fingerprint of the previous certificate
- * @param flags           See VERIFY_CERT_FLAG_* for possible values.
- *
- * @return 1 if the certificate is trusted, 2 if temporary trusted, 0 otherwise.
- */
-static DWORD pf_client_verify_changed_certificate_ex(
-    freerdp* instance, const char* host, UINT16 port, const char* common_name, const char* subject,
-    const char* issuer, const char* fingerprint, const char* old_subject, const char* old_issuer,
-    const char* old_fingerprint, DWORD flags)
-{
-	/* TODO: Add trust level to proxy configurable settings */
-	return 1;
-}
-
 static void pf_client_context_free(freerdp* instance, rdpContext* context)
 {
 	pClientContext* pc = (pClientContext*)context;
@@ -748,8 +695,6 @@ static BOOL pf_client_client_new(freerdp* instance, rdpContext* context)
 	instance->PreConnect = pf_client_pre_connect;
 	instance->PostConnect = pf_client_post_connect;
 	instance->PostDisconnect = pf_client_post_disconnect;
-	instance->VerifyCertificateEx = pf_client_verify_certificate_ex;
-	instance->VerifyChangedCertificateEx = pf_client_verify_changed_certificate_ex;
 	instance->LogonErrorInfo = pf_logon_error_info;
 	instance->ContextFree = pf_client_context_free;
 
