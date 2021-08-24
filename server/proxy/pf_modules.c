@@ -398,11 +398,24 @@ static void free_plugin(void* obj)
 
 	if (!IFCALLRESULT(TRUE, plugin->PluginUnload, plugin))
 		WLog_WARN(TAG, "PluginUnload failed for plugin '%s'", plugin->name);
+
+	free(plugin);
+}
+
+static void* new_plugin(const void* obj)
+{
+	const proxyPlugin* src = obj;
+	proxyPlugin* proxy = calloc(1, sizeof(proxyPlugin));
+	if (!proxy)
+		return NULL;
+	*proxy = *src;
+	return proxy;
 }
 
 proxyModule* pf_modules_new(const char* root_dir, const char** modules, size_t count)
 {
 	size_t i;
+	wObject* obj;
 	proxyModule* module = calloc(1, sizeof(proxyModule));
 	if (!module)
 		return NULL;
@@ -418,7 +431,11 @@ proxyModule* pf_modules_new(const char* root_dir, const char** modules, size_t c
 		WLog_ERR(TAG, "[%s]: ArrayList_New failed!", __FUNCTION__);
 		goto error;
 	}
-	ArrayList_Object(module->plugins)->fnObjectFree = free_plugin;
+	obj = ArrayList_Object(module->plugins);
+	WINPR_ASSERT(obj);
+
+	obj->fnObjectFree = free_plugin;
+	obj->fnObjectNew = new_plugin;
 
 	module->handles = ArrayList_New(FALSE);
 	if (module->handles == NULL)
