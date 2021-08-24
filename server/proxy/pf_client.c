@@ -329,6 +329,7 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
 		const char* cname = config->Passthrough[i];
 		if (strncmp(channel_name, cname, CHANNEL_NAME_LEN + 1) == 0)
 		{
+			BOOL forward = TRUE;
 			proxyChannelDataEventInfo ev;
 			UINT16 server_channel_id;
 
@@ -341,9 +342,77 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
 			                           pdata, &ev))
 				return FALSE;
 
-			server_channel_id = WTSChannelGetId(ps->context.peer, channel_name);
-			return ps->context.peer->SendChannelData(ps->context.peer, server_channel_id, data,
-			                                         size);
+			/* Dynamic channels need special treatment
+			 *
+			 * We need to check every message with CHANNEL_FLAG_FIRST set if it
+			 * is a CREATE_REQUEST_PDU (0x01) and extract channelId and name
+			 * from it.
+			 *
+			 * To avoid issues with (misbehaving) clients assume all packets
+			 * that do not have at least a length of 1 byte and all incomplete
+			 * CREATE_REQUEST_PDU (0x01) packets as invalid.
+			 */
+			if ((flags & CHANNEL_FLAG_FIRST) &&
+			    (strncmp(channel_name, "drdynvc", CHANNEL_NAME_LEN + 1) == 0))
+			{
+				BYTE cmd;
+				if (size < 1)
+					return FALSE;
+
+				cmd = data[0] >> 4;
+				if (cmd == 0x01)
+				{
+					proxyChannelDataEventInfo dev;
+					size_t len, nameLen;
+					const char* name;
+					UINT32 channelId;
+					BYTE cbId = data[0] & 0x03;
+					switch (cbId)
+					{
+						case 0x00:
+							if (size < 2)
+								return FALSE;
+							channelId = data[1];
+							name = (char*)&data[2];
+							nameLen = size - 2;
+							break;
+						case 0x01:
+							if (size < 3)
+								return FALSE;
+							channelId = data[1] << 8 | data[2];
+							name = (char*)&data[3];
+							nameLen = size - 3;
+							break;
+						case 0x02:
+							if (size < 5)
+								return FALSE;
+							channelId = data[1] << 24 | data[2] << 16 | data[3] << 8 | data[4];
+							name = (char*)&data[5];
+							nameLen = size - 5;
+							break;
+						default:
+							return FALSE;
+					}
+
+					len = strnlen(name, nameLen);
+					if ((len == 0) || (len == nameLen))
+						return FALSE;
+					ev.channel_id = channelId;
+					ev.channel_name = name;
+					ev.data = data;
+					ev.data_len = size;
+
+					forward = pf_modules_run_filter(
+					    pdata->module, FILTER_TYPE_CLIENT_PASSTHROUGH_DYN_CHANNEL_CREATE, pdata,
+					    &dev);
+				}
+			}
+			if (forward)
+			{
+				server_channel_id = WTSChannelGetId(ps->context.peer, channel_name);
+				return ps->context.peer->SendChannelData(ps->context.peer, server_channel_id, data,
+				                                         size);
+			}
 		}
 	}
 

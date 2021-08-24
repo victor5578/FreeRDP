@@ -64,6 +64,7 @@ struct proxy_plugin
 	proxyFilterFn MouseEvent;
 	proxyFilterFn ClientChannelData; /* passthrough channels data */
 	proxyFilterFn ServerChannelData; /* passthrough channels data */
+	proxyFilterFn DynamicChannelCreate; /* passthrough drdynvc channel create data */
 	proxyFilterFn ServerFetchTargetAddr;
 
 	/* Runtime data fields */
