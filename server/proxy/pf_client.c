@@ -397,10 +397,10 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
 					len = strnlen(name, nameLen);
 					if ((len == 0) || (len == nameLen))
 						return FALSE;
-					ev.channel_id = channelId;
-					ev.channel_name = name;
-					ev.data = data;
-					ev.data_len = size;
+					dev.channel_id = channelId;
+					dev.channel_name = name;
+					dev.data = data;
+					dev.data_len = size;
 
 					forward = pf_modules_run_filter(
 					    pdata->module, FILTER_TYPE_CLIENT_PASSTHROUGH_DYN_CHANNEL_CREATE, pdata,
