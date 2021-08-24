@@ -62,6 +62,8 @@ typedef struct p_server_context pServerContext;
 /**
  * Wraps rdpContext and holds the state for the proxy's client.
  */
+typedef struct p_client_context pClientContext;
+
 struct p_client_context
 {
 	rdpContext context;
@@ -90,8 +92,8 @@ struct p_client_context
 
 	pReceiveChannelData client_receive_channel_data_original;
 	wArrayList* cached_server_channel_data;
+	BOOL (*sendChannelData)(pClientContext* pc, const proxyChannelDataEventInfo* ev);
 };
-typedef struct p_client_context pClientContext;
 
 /**
  * Holds data common to both sides of a proxy's session.

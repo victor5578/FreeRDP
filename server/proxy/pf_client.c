@@ -366,20 +366,35 @@ static BOOL pf_client_on_server_heartbeat(freerdp* instance, BYTE period, BYTE c
 	return freerdp_heartbeat_send_heartbeat_pdu(ps->context.peer, period, count1, count2);
 }
 
+static BOOL pf_client_send_channel_data(pClientContext* pc, const proxyChannelDataEventInfo* ev)
+{
+	WINPR_ASSERT(pc);
+	WINPR_ASSERT(ev);
+
+	if (!pc->connected)
+	{
+		ArrayList_Append(pc->cached_server_channel_data, ev);
+		return TRUE;
+	}
+	else
+	{
+		UINT16 channelId = freerdp_channels_get_id_by_name(pc->context.instance, ev->channel_name);
+		WINPR_ASSERT(channelId > 0);
+		WINPR_ASSERT(channelId < UINT16_MAX);
+		return pc->context.instance->SendChannelData(pc->context.instance, channelId, ev->data,
+		                                             ev->data_len);
+	}
+}
+
 static BOOL send_channel_data(void* data, size_t index, va_list ap)
 {
-	UINT16 channelId;
 	pClientContext* pc = va_arg(ap, pClientContext*);
 	proxyChannelDataEventInfo* ev = data;
 	WINPR_ASSERT(ev);
 	WINPR_ASSERT(pc);
 	WINPR_UNUSED(index);
 
-	channelId = freerdp_channels_get_id_by_name(pc->context.instance, ev->channel_name);
-	WINPR_ASSERT(channelId > 0);
-	WINPR_ASSERT(channelId < UINT16_MAX);
-	return pc->context.instance->SendChannelData(pc->context.instance, channelId, ev->data,
-	                                             ev->data_len);
+	return pf_client_send_channel_data(pc, ev);
 }
 
 /**
@@ -758,6 +773,7 @@ static BOOL pf_client_client_new(freerdp* instance, rdpContext* context)
 	instance->LogonErrorInfo = pf_logon_error_info;
 	instance->ContextFree = pf_client_context_free;
 
+	pc->sendChannelData = pf_client_send_channel_data;
 	pc->cached_server_channel_data = ArrayList_New(TRUE);
 	if (!pc->cached_server_channel_data)
 		return FALSE;
