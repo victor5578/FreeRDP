@@ -366,6 +366,22 @@ static BOOL pf_client_on_server_heartbeat(freerdp* instance, BYTE period, BYTE c
 	return freerdp_heartbeat_send_heartbeat_pdu(ps->context.peer, period, count1, count2);
 }
 
+static BOOL send_channel_data(void* data, size_t index, va_list ap)
+{
+	UINT16 channelId;
+	pClientContext* pc = va_arg(ap, pClientContext*);
+	proxyChannelDataEventInfo* ev = data;
+	WINPR_ASSERT(ev);
+	WINPR_ASSERT(pc);
+	WINPR_UNUSED(index);
+
+	channelId = freerdp_channels_get_id_by_name(pc->context.instance, ev->channel_name);
+	WINPR_ASSERT(channelId > 0);
+	WINPR_ASSERT(channelId < UINT16_MAX);
+	return pc->context.instance->SendChannelData(pc->context.instance, channelId, ev->data,
+	                                             ev->data_len);
+}
+
 /**
  * Called after a RDP connection was successfully established.
  * Settings might have changed during negotiation of client / server feature
@@ -432,7 +448,13 @@ static BOOL pf_client_post_connect(freerdp* instance)
 
 	instance->heartbeat->ServerHeartbeat = pf_client_on_server_heartbeat;
 
-	// TODO: Empty channel queue for messages already sent from server
+	pc->connected = TRUE;
+
+	/* Send cached channel data */
+	ArrayList_Lock(pc->cached_server_channel_data);
+	ArrayList_ForEach(pc->cached_server_channel_data, send_channel_data, pc);
+	ArrayList_Clear(pc->cached_server_channel_data);
+	ArrayList_Unlock(pc->cached_server_channel_data);
 
 	/*
 	 * after the connection fully established and settings were negotiated with target server,
@@ -685,10 +707,48 @@ static void pf_client_context_free(freerdp* instance, rdpContext* context)
 
 	if (!pc)
 		return;
+
+	ArrayList_Free(pc->cached_server_channel_data);
+}
+
+static void* channel_data_copy(const void* obj)
+{
+	const proxyChannelDataEventInfo* src = obj;
+	proxyChannelDataEventInfo* dst;
+
+	WINPR_ASSERT(src);
+
+	dst = calloc(1, sizeof(proxyChannelDataEventInfo));
+	WINPR_ASSERT(dst);
+
+	*dst = *src;
+	if (src->channel_name)
+	{
+		dst->channel_name = _strdup(src->channel_name);
+		WINPR_ASSERT(dst->channel_name);
+	}
+	dst->data = malloc(src->data_len);
+	WINPR_ASSERT(dst->data);
+	memcpy((void*)dst->data, src->data, src->data_len);
+	return dst;
+}
+
+static void channel_data_free(void* obj)
+{
+	proxyChannelDataEventInfo* dst = obj;
+	if (dst)
+	{
+		free((void*)dst->data);
+		free((void*)dst->channel_name);
+		free(dst);
+	}
 }
 
 static BOOL pf_client_client_new(freerdp* instance, rdpContext* context)
 {
+	wObject* obj;
+	pClientContext* pc = (pClientContext*)context;
+
 	if (!instance || !context)
 		return FALSE;
 
@@ -698,6 +758,13 @@ static BOOL pf_client_client_new(freerdp* instance, rdpContext* context)
 	instance->LogonErrorInfo = pf_logon_error_info;
 	instance->ContextFree = pf_client_context_free;
 
+	pc->cached_server_channel_data = ArrayList_New(TRUE);
+	if (!pc->cached_server_channel_data)
+		return FALSE;
+	obj = ArrayList_Object(pc->cached_server_channel_data);
+	WINPR_ASSERT(obj);
+	obj->fnObjectNew = channel_data_copy;
+	obj->fnObjectFree = channel_data_free;
 	return TRUE;
 }
 

@@ -86,7 +86,10 @@ struct p_client_context
 	 */
 	BOOL allow_next_conn_failure;
 
+	BOOL connected; /* Set after client post_connect. */
+
 	pReceiveChannelData client_receive_channel_data_original;
+	wArrayList* cached_server_channel_data;
 };
 typedef struct p_client_context pClientContext;
 
