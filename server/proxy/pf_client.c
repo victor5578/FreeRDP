@@ -379,14 +379,14 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
 						case 0x01:
 							if (size < 3)
 								return FALSE;
-							channelId = data[1] << 8 | data[2];
+							channelId = data[2] << 8 | data[1];
 							name = (char*)&data[3];
 							nameLen = size - 3;
 							break;
 						case 0x02:
 							if (size < 5)
 								return FALSE;
-							channelId = data[1] << 24 | data[2] << 16 | data[3] << 8 | data[4];
+							channelId = data[4] << 24 | data[3] << 16 | data[2] << 8 | data[1];
 							name = (char*)&data[5];
 							nameLen = size - 5;
 							break;
