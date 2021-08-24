@@ -62,8 +62,8 @@ struct proxy_plugin
 	/* proxy filters. a module can set these function pointers to register filters */
 	proxyFilterFn KeyboardEvent;
 	proxyFilterFn MouseEvent;
-	proxyFilterFn ClientChannelData; /* passthrough channels data */
-	proxyFilterFn ServerChannelData; /* passthrough channels data */
+	proxyFilterFn ClientChannelData;    /* passthrough channels data */
+	proxyFilterFn ServerChannelData;    /* passthrough channels data */
 	proxyFilterFn DynamicChannelCreate; /* passthrough drdynvc channel create data */
 	proxyFilterFn ServerFetchTargetAddr;
 
@@ -71,8 +71,8 @@ struct proxy_plugin
 	proxyPluginsManager* mgr; /** Set during plugin registration */
 	void* userdata;           /** Custom data provided with RegisterPlugin, memory managed
 	                             outside of plugin. */
-	void* custom;   /** Custom configuration data, must be allocated in RegisterPlugin and freed in
-	                   PluginUnload */
+	void* custom; /** Custom configuration data, must be allocated in RegisterPlugin and freed in
+	                 PluginUnload */
 };
 
 /*
