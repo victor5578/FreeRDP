@@ -21,7 +21,7 @@
 #include <freerdp/server/proxy/proxy_log.h>
 
 #include "pf_cliprdr.h"
-#include "pf_config.h"
+#include <freerdp/server/proxy/proxy_config.h>
 
 #define TAG PROXY_TAG("cliprdr")
 #define TEXT_FORMATS_COUNT 2

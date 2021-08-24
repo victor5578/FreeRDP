@@ -20,10 +20,10 @@
  */
 
 #include "pf_input.h"
+#include <freerdp/server/proxy/proxy_config.h>
 #include <freerdp/server/proxy/proxy_context.h>
 
 #include "proxy_modules.h"
-#include "pf_config.h"
 
 static BOOL pf_server_synchronize_event(rdpInput* input, UINT32 flags)
 {

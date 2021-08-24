@@ -24,8 +24,8 @@
 
 #include <freerdp/server/proxy/proxy_modules_api.h>
 #include <freerdp/server/proxy/proxy_log.h>
+#include <freerdp/server/proxy/proxy_context.h>
 
-#include "pf_context.h"
 #include "cap_config.h"
 #include "cap_protocol.h"
 

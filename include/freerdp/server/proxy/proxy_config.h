@@ -20,11 +20,70 @@
 #ifndef FREERDP_SERVER_PROXY_CONFIG_H
 #define FREERDP_SERVER_PROXY_CONFIG_H
 
+#include <winpr/wtypes.h>
 #include <winpr/ini.h>
 
 #include <freerdp/api.h>
 
 typedef struct proxy_config proxyConfig;
+
+struct proxy_config
+{
+	/* server */
+	char* Host;
+	UINT16 Port;
+
+	/* target */
+	BOOL FixedTarget;
+	char* TargetHost;
+	UINT16 TargetPort;
+
+	/* input */
+	BOOL Keyboard;
+	BOOL Mouse;
+
+	/* server security */
+	BOOL ServerTlsSecurity;
+	BOOL ServerRdpSecurity;
+
+	/* client security */
+	BOOL ClientNlaSecurity;
+	BOOL ClientTlsSecurity;
+	BOOL ClientRdpSecurity;
+	BOOL ClientAllowFallbackToTls;
+
+	/* channels */
+	BOOL GFX;
+	BOOL DisplayControl;
+	BOOL Clipboard;
+	BOOL AudioOutput;
+	BOOL RemoteApp;
+	char** Passthrough;
+	size_t PassthroughCount;
+
+	/* clipboard specific settings */
+	BOOL TextOnly;
+	UINT32 MaxTextLength;
+
+	/* gfx settings */
+	BOOL DecodeGFX;
+
+	/* modules */
+	char** Modules; /* module file names to load */
+	size_t ModulesCount;
+
+	char** RequiredPlugins; /* required plugin names */
+	size_t RequiredPluginsCount;
+
+	char* CertificateFile;
+	char* CertificateContent;
+
+	char* PrivateKeyFile;
+	char* PrivateKeyContent;
+
+	char* RdpKeyFile;
+	char* RdpKeyContent;
+};
 
 #ifdef __cplusplus
 extern "C"

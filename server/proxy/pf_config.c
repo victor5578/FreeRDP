@@ -25,7 +25,7 @@
 #include <winpr/cmdline.h>
 
 #include "pf_server.h"
-#include "pf_config.h"
+#include <freerdp/server/proxy/proxy_config.h>
 
 #include <freerdp/server/proxy/proxy_config.h>
 #include <freerdp/server/proxy/proxy_log.h>

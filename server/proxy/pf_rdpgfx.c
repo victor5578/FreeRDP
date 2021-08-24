@@ -26,7 +26,7 @@
 #include <winpr/synch.h>
 
 #include "pf_rdpgfx.h"
-#include "pf_config.h"
+#include <freerdp/server/proxy/proxy_config.h>
 #include <freerdp/server/proxy/proxy_context.h>
 
 #define TAG PROXY_TAG("gfx")
