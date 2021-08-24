@@ -27,27 +27,12 @@
 #include "pf_client.h"
 #include "pf_context.h"
 
-static wHashTable* create_channel_ids_map()
-{
-	wHashTable* table = HashTable_New(TRUE);
-	if (!table)
-		return NULL;
-
-	if (!HashTable_SetupForStringData(table, FALSE))
-		goto fail;
-
-	return table;
-fail:
-	HashTable_Free(table);
-	return NULL;
-}
-
 /* Proxy context initialization callback */
 static BOOL client_to_proxy_context_new(freerdp_peer* client, rdpContext* ctx)
 {
 	pServerContext* context = (pServerContext*)ctx;
-	proxyServer* server = (proxyServer*)client->ContextExtra;
-	const proxyConfig* config = server->config;
+
+	WINPR_ASSERT(context);
 
 	context->dynvcReady = NULL;
 
@@ -57,14 +42,6 @@ static BOOL client_to_proxy_context_new(freerdp_peer* client, rdpContext* ctx)
 		goto error;
 
 	if (!(context->dynvcReady = CreateEvent(NULL, TRUE, FALSE, NULL)))
-		goto error;
-
-	context->vc_handles = (HANDLE*)calloc(config->PassthroughCount, sizeof(HANDLE));
-	if (!context->vc_handles)
-		goto error;
-
-	context->vc_ids = create_channel_ids_map();
-	if (!context->vc_ids)
 		goto error;
 
 	return TRUE;
@@ -79,10 +56,6 @@ error:
 		context->dynvcReady = NULL;
 	}
 
-	free(context->vc_handles);
-	context->vc_handles = NULL;
-	HashTable_Free(context->vc_ids);
-	context->vc_ids = NULL;
 	return FALSE;
 }
 
@@ -101,13 +74,12 @@ static void client_to_proxy_context_free(freerdp_peer* client, rdpContext* ctx)
 		CloseHandle(context->dynvcReady);
 		context->dynvcReady = NULL;
 	}
-
-	HashTable_Free(context->vc_ids);
-	free(context->vc_handles);
 }
 
 BOOL pf_context_init_server_context(freerdp_peer* client)
 {
+	WINPR_ASSERT(client);
+
 	client->ContextSize = sizeof(pServerContext);
 	client->ContextNew = client_to_proxy_context_new;
 	client->ContextFree = client_to_proxy_context_free;
@@ -199,10 +171,6 @@ pClientContext* pf_context_create_client_context(rdpSettings* clientSettings)
 	pc = (pClientContext*)context;
 
 	if (!pf_context_copy_settings(context->settings, clientSettings))
-		goto error;
-
-	pc->vc_ids = create_channel_ids_map();
-	if (!pc->vc_ids)
 		goto error;
 
 	return pc;

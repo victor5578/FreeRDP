@@ -232,33 +232,6 @@ BOOL pf_server_channels_init(pServerContext* ps)
 			return FALSE;
 	}
 
-	{
-		/* open static channels for passthrough */
-		size_t i;
-
-		for (i = 0; i < config->PassthroughCount; i++)
-		{
-			char* channel_name = config->Passthrough[i];
-			UINT64 channel_id;
-
-			/* only open channel if client joined with it */
-			if (!WTSVirtualChannelManagerIsChannelJoined(ps->vcm, channel_name))
-				continue;
-
-			ps->vc_handles[i] = WTSVirtualChannelOpen(ps->vcm, WTS_CURRENT_SESSION, channel_name);
-			if (!ps->vc_handles[i])
-			{
-				PROXY_LOG_ERR(TAG, ps, "WTSVirtualChannelOpen failed for passthrough channel: %s",
-				              channel_name);
-
-				return FALSE;
-			}
-
-			channel_id = (UINT64)WTSChannelGetId(ps->context.peer, channel_name);
-			HashTable_Insert(ps->vc_ids, channel_name, (void*)channel_id);
-		}
-	}
-
 	return pf_modules_run_hook(ps->pdata->module, HOOK_TYPE_SERVER_CHANNELS_INIT, ps->pdata);
 }
 

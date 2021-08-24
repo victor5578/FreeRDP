@@ -143,7 +143,8 @@ static BOOL pf_client_passthrough_channels_init(pClientContext* pc)
 		channel.options = CHANNEL_OPTION_INITIALIZED; /* TODO: Export to config. */
 		strncpy(channel.name, channel_name, CHANNEL_NAME_LEN);
 
-		settings->ChannelDefArray[settings->ChannelCount++] = channel;
+		freerdp_settings_set_pointer_array(settings, FreeRDP_ChannelDefArray,
+		                                   settings->ChannelCount++, &channel);
 	}
 
 	return TRUE;
@@ -268,10 +269,11 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
 
 	for (i = 0; i < config->PassthroughCount; i++)
 	{
-		if (strncmp(channel_name, config->Passthrough[i], CHANNEL_NAME_LEN) == 0)
+		const char* cname = config->Passthrough[i];
+		if (strncmp(channel_name, cname, CHANNEL_NAME_LEN) == 0)
 		{
 			proxyChannelDataEventInfo ev;
-			UINT64 server_channel_id;
+			UINT16 server_channel_id;
 
 			ev.channel_id = channelId;
 			ev.channel_name = channel_name;
@@ -282,9 +284,9 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
 			                           pdata, &ev))
 				return FALSE;
 
-			server_channel_id = (UINT64)HashTable_GetItemValue(ps->vc_ids, channel_name);
-			return ps->context.peer->SendChannelData(ps->context.peer, (UINT16)server_channel_id,
-			                                         data, size);
+			server_channel_id = WTSChannelGetId(ps->context.peer, channel_name);
+			return ps->context.peer->SendChannelData(ps->context.peer, server_channel_id, data,
+			                                         size);
 		}
 	}
 
@@ -356,18 +358,9 @@ static BOOL pf_client_post_connect(freerdp* instance)
 	pc->client_receive_channel_data_original = instance->ReceiveChannelData;
 	instance->ReceiveChannelData = pf_client_receive_channel_data_hook;
 
-	/* populate channel name -> channel ids map */
-	{
-		size_t i;
-		for (i = 0; i < config->PassthroughCount; i++)
-		{
-			const char* channel_name = config->Passthrough[i];
-			UINT64 channel_id = (UINT64)freerdp_channels_get_id_by_name(instance, channel_name);
-			HashTable_Insert(pc->vc_ids, (void*)channel_name, (void*)channel_id);
-		}
-	}
-
 	instance->heartbeat->ServerHeartbeat = pf_client_on_server_heartbeat;
+
+	// TODO: Empty channel queue for messages already sent from server
 
 	/*
 	 * after the connection fully established and settings were negotiated with target server,
@@ -636,8 +629,6 @@ static void pf_client_context_free(freerdp* instance, rdpContext* context)
 
 	if (!pc)
 		return;
-
-	HashTable_Free(pc->vc_ids);
 }
 
 static BOOL pf_client_client_new(freerdp* instance, rdpContext* context)

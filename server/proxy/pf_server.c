@@ -285,11 +285,13 @@ static BOOL pf_server_receive_channel_data_hook(freerdp_peer* peer, UINT16 chann
 
 	for (i = 0; i < config->PassthroughCount; i++)
 	{
-		if (strncmp(channel_name, config->Passthrough[i], CHANNEL_NAME_LEN) == 0)
+		const char* cname = config->Passthrough[i];
+		if (strncmp(channel_name, cname, CHANNEL_NAME_LEN) == 0)
 		{
 			proxyChannelDataEventInfo ev;
-			UINT64 client_channel_id;
+			UINT16 client_channel_id;
 
+			// TODO: Queue this until the client has connected
 			ev.channel_id = channelId;
 			ev.channel_name = channel_name;
 			ev.data = data;
@@ -299,10 +301,10 @@ static BOOL pf_server_receive_channel_data_hook(freerdp_peer* peer, UINT16 chann
 			                           pdata, &ev))
 				return FALSE;
 
-			client_channel_id = (UINT64)HashTable_GetItemValue(pc->vc_ids, channel_name);
+			client_channel_id = freerdp_channels_get_id_by_name(pc->context.instance, channel_name);
 
-			return pc->context.instance->SendChannelData(pc->context.instance,
-			                                             (UINT16)client_channel_id, data, size);
+			return pc->context.instance->SendChannelData(pc->context.instance, client_channel_id,
+			                                             data, size);
 		}
 	}
 
