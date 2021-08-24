@@ -35,7 +35,8 @@
 
 #include "pf_channels.h"
 #include "pf_client.h"
-#include "pf_context.h"
+#include "pf_config.h"
+#include <freerdp/server/proxy/proxy_context.h>
 #include "pf_rail.h"
 #include "pf_rdpgfx.h"
 #include "pf_cliprdr.h"

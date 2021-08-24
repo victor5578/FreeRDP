@@ -27,6 +27,7 @@
 #define MODULE_TAG(module) "proxy.modules." module
 
 typedef struct proxy_data proxyData;
+typedef struct proxy_module proxyModule;
 typedef struct proxy_plugin proxyPlugin;
 typedef struct proxy_plugins_manager proxyPluginsManager;
 

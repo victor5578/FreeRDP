@@ -27,7 +27,7 @@
 #include <freerdp/server/proxy/proxy_log.h>
 
 #include "pf_update.h"
-#include "pf_context.h"
+#include <freerdp/server/proxy/proxy_context.h>
 #include "proxy_modules.h"
 
 #define TAG PROXY_TAG("update")

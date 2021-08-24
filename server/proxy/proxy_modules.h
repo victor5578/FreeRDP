@@ -55,8 +55,6 @@ enum _PF_HOOK_TYPE
 };
 typedef enum _PF_HOOK_TYPE PF_HOOK_TYPE;
 
-typedef struct proxy_module proxyModule;
-
 #ifdef __cplusplus
 extern "C"
 {

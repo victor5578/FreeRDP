@@ -24,7 +24,7 @@
 #include <freerdp/server/proxy/proxy_log.h>
 
 #include "pf_rail.h"
-#include "pf_context.h"
+#include <freerdp/server/proxy/proxy_context.h>
 
 #define TAG PROXY_TAG("rail")
 

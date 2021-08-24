@@ -34,10 +34,13 @@
 #include <freerdp/server/cliprdr.h>
 #include <freerdp/server/rdpsnd.h>
 
-#include "pf_config.h"
-#include "pf_server.h"
+#include <freerdp/server/proxy/proxy_config.h>
 
 #define PROXY_SESSION_ID_LENGTH 32
+
+typedef struct proxy_data proxyData;
+typedef struct proxy_module proxyModule;
+typedef struct channel_data_event_info proxyChannelDataEventInfo;
 
 /**
  * Wraps rdpContext and holds the state for the proxy's server.

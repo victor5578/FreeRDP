@@ -25,7 +25,7 @@
 #include <freerdp/server/proxy/proxy_server.h>
 
 #include "pf_client.h"
-#include "pf_context.h"
+#include <freerdp/server/proxy/proxy_context.h>
 
 /* Proxy context initialization callback */
 static BOOL client_to_proxy_context_new(freerdp_peer* client, rdpContext* ctx)

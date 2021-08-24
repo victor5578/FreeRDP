@@ -23,7 +23,6 @@ set(MODULE_PREFIX "FREERDP_SERVER_PROXY")
 
 set(${MODULE_PREFIX}_SRCS
   pf_context.c
-  pf_context.h
   pf_channels.c
   pf_channels.h
   pf_client.c

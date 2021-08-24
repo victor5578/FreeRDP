@@ -38,7 +38,7 @@
 #include "pf_server.h"
 #include "pf_config.h"
 #include "pf_client.h"
-#include "pf_context.h"
+#include <freerdp/server/proxy/proxy_context.h>
 #include "pf_update.h"
 #include "pf_rdpgfx.h"
 #include "pf_disp.h"

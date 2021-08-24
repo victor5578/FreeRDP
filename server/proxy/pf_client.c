@@ -33,9 +33,10 @@
 #include "pf_gdi.h"
 #include "pf_graphics.h"
 #include "pf_client.h"
-#include "pf_context.h"
+#include <freerdp/server/proxy/proxy_context.h>
 #include "pf_update.h"
 #include "pf_input.h"
+#include "pf_config.h"
 #include "proxy_modules.h"
 
 #define TAG PROXY_TAG("client")

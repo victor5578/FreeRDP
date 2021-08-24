@@ -31,7 +31,7 @@
 
 #include "pf_graphics.h"
 #include "pf_gdi.h"
-#include "pf_context.h"
+#include <freerdp/server/proxy/proxy_context.h>
 
 #include <freerdp/gdi/dc.h>
 #include <freerdp/gdi/shape.h>
