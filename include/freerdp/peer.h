@@ -153,9 +153,6 @@ extern "C"
 	FREERDP_API BOOL freerdp_peer_set_local_and_hostname(freerdp_peer* client,
 	                                                     const struct sockaddr_storage* peer_addr);
 
-	FREERDP_API BOOL freerdp_peer_set_local_and_hostname(freerdp_peer* client,
-	                                                     const struct sockaddr_storage* peer_addr);
-
 #ifdef __cplusplus
 }
 #endif
