@@ -326,7 +326,7 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
 	for (i = 0; i < config->PassthroughCount; i++)
 	{
 		const char* cname = config->Passthrough[i];
-		if (strncmp(channel_name, cname, CHANNEL_NAME_LEN) == 0)
+		if (strncmp(channel_name, cname, CHANNEL_NAME_LEN + 1) == 0)
 		{
 			proxyChannelDataEventInfo ev;
 			UINT16 server_channel_id;
