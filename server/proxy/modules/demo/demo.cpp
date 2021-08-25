@@ -163,7 +163,16 @@ static BOOL demo_server_fetch_target_addr(proxyPlugin* plugin, proxyData* pdata,
 	return TRUE;
 }
 
-FREERDP_API BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, void* userdata)
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+	FREERDP_API BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, void* userdata);
+#ifdef __cplusplus
+}
+#endif
+
+BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, void* userdata)
 {
 	struct demo_custom_data
 	{
