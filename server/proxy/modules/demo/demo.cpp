@@ -26,6 +26,89 @@
 static constexpr char plugin_name[] = "demo";
 static constexpr char plugin_desc[] = "this is a test plugin";
 
+static BOOL demo_plugin_unload(proxyPlugin* plugin)
+{
+	std::cout << "C++ demo plugin: unloading..." << std::endl;
+
+	/* Here we have to free up our custom data storage. */
+	if (plugin)
+		free(plugin->custom);
+
+	return TRUE;
+}
+
+static BOOL demo_client_init_connect(proxyPlugin*, proxyData*)
+{
+	WLog_INFO(TAG, "%s", __FUNCTION__);
+	return TRUE;
+}
+
+static BOOL demo_client_uninit_connect(proxyPlugin*, proxyData*)
+{
+	WLog_INFO(TAG, "%s", __FUNCTION__);
+	return TRUE;
+}
+
+static BOOL demo_client_pre_connect(proxyPlugin*, proxyData*)
+{
+	WLog_INFO(TAG, "%s", __FUNCTION__);
+	return TRUE;
+}
+
+static BOOL demo_client_post_connect(proxyPlugin*, proxyData*)
+{
+	WLog_INFO(TAG, "%s", __FUNCTION__);
+	return TRUE;
+}
+
+static BOOL demo_client_post_disconnect(proxyPlugin*, proxyData*)
+{
+	WLog_INFO(TAG, "%s", __FUNCTION__);
+	return TRUE;
+}
+
+static BOOL demo_client_x509_certificate(proxyPlugin*, proxyData*)
+{
+	WLog_INFO(TAG, "%s", __FUNCTION__);
+	return TRUE;
+}
+
+static BOOL demo_client_login_failure(proxyPlugin*, proxyData*)
+{
+	WLog_INFO(TAG, "%s", __FUNCTION__);
+	return TRUE;
+}
+
+static BOOL demo_client_end_paint(proxyPlugin*, proxyData*)
+{
+	WLog_INFO(TAG, "%s", __FUNCTION__);
+	return TRUE;
+}
+
+static BOOL demo_server_post_connect(proxyPlugin*, proxyData*)
+{
+	WLog_INFO(TAG, "%s", __FUNCTION__);
+	return TRUE;
+}
+
+static BOOL demo_server_channels_init(proxyPlugin*, proxyData*)
+{
+	WLog_INFO(TAG, "%s", __FUNCTION__);
+	return TRUE;
+}
+
+static BOOL demo_server_channels_free(proxyPlugin*, proxyData*)
+{
+	WLog_INFO(TAG, "%s", __FUNCTION__);
+	return TRUE;
+}
+
+static BOOL demo_server_session_end(proxyPlugin*, proxyData*)
+{
+	WLog_INFO(TAG, "%s", __FUNCTION__);
+	return TRUE;
+}
+
 static BOOL demo_filter_keyboard_event(proxyPlugin* plugin, proxyData* pdata, void* param)
 {
 	proxyPluginsManager* mgr;
@@ -50,14 +133,33 @@ static BOOL demo_filter_keyboard_event(proxyPlugin* plugin, proxyData* pdata, vo
 	return TRUE;
 }
 
-static BOOL demo_plugin_unload(proxyPlugin* plugin)
+static BOOL demo_mouse_event(proxyPlugin* plugin, proxyData* pdata, void* param)
 {
-	std::cout << "C++ demo plugin: unloading..." << std::endl;
+	WLog_INFO(TAG, "%s", __FUNCTION__);
+	return TRUE;
+}
 
-	/* Here we have to free up our custom data storage. */
-	if (plugin)
-		free(plugin->custom);
+static BOOL demo_client_channel_data(proxyPlugin* plugin, proxyData* pdata, void* param)
+{
+	WLog_INFO(TAG, "%s", __FUNCTION__);
+	return TRUE;
+}
 
+static BOOL demo_server_channel_data(proxyPlugin* plugin, proxyData* pdata, void* param)
+{
+	WLog_INFO(TAG, "%s", __FUNCTION__);
+	return TRUE;
+}
+
+static BOOL demo_dynamic_channel_create(proxyPlugin* plugin, proxyData* pdata, void* param)
+{
+	WLog_INFO(TAG, "%s", __FUNCTION__);
+	return TRUE;
+}
+
+static BOOL demo_server_fetch_target_addr(proxyPlugin* plugin, proxyData* pdata, void* param)
+{
+	WLog_INFO(TAG, "%s", __FUNCTION__);
 	return TRUE;
 }
 
@@ -70,30 +172,30 @@ FREERDP_API BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, 
 	};
 	struct demo_custom_data* custom;
 
-	proxyPlugin demo_plugin = { plugin_name,                /* name */
-		                        plugin_desc,                /* description */
-		                        demo_plugin_unload,         /* PluginUnload */
-		                        nullptr,                    /* ClientInitConnect */
-		                        nullptr,                    /* ClientUninitConnect */
-		                        nullptr,                    /* ClientPreConnect */
-		                        nullptr,                    /* ClientPostConnect */
-		                        nullptr,                    /* ClientPostDisconnect */
-		                        nullptr,                    /* ClientX509Certificate */
-		                        nullptr,                    /* ClientLoginFailure */
-		                        nullptr,                    /* ClientEndPaint */
-		                        nullptr,                    /* ServerPostConnect */
-		                        nullptr,                    /* ServerChannelsInit */
-		                        nullptr,                    /* ServerChannelsFree */
-		                        nullptr,                    /* ServerSessionEnd */
-		                        demo_filter_keyboard_event, /* KeyboardEvent */
-		                        nullptr,                    /* MouseEvent */
-		                        nullptr,                    /* ClientChannelData */
-		                        nullptr,                    /* ServerChannelData */
-		                        nullptr,                    /* DynamicChannelCreate */
-		                        nullptr,                    /* ServerFetchTargetAddr */
-		                        nullptr,                    /* proxyPluginsManager */
-		                        userdata,                   /* userdata */
-		                        nullptr };                  /* custom */
+	proxyPlugin demo_plugin = { plugin_name,                   /* name */
+		                        plugin_desc,                   /* description */
+		                        demo_plugin_unload,            /* PluginUnload */
+		                        demo_client_init_connect,      /* ClientInitConnect */
+		                        demo_client_uninit_connect,    /* ClientUninitConnect */
+		                        demo_client_pre_connect,       /* ClientPreConnect */
+		                        demo_client_post_connect,      /* ClientPostConnect */
+		                        demo_client_post_disconnect,   /* ClientPostDisconnect */
+		                        demo_client_x509_certificate,  /* ClientX509Certificate */
+		                        demo_client_login_failure,     /* ClientLoginFailure */
+		                        demo_client_end_paint,         /* ClientEndPaint */
+		                        demo_server_post_connect,      /* ServerPostConnect */
+		                        demo_server_channels_init,     /* ServerChannelsInit */
+		                        demo_server_channels_free,     /* ServerChannelsFree */
+		                        demo_server_session_end,       /* ServerSessionEnd */
+		                        demo_filter_keyboard_event,    /* KeyboardEvent */
+		                        demo_mouse_event,              /* MouseEvent */
+		                        demo_client_channel_data,      /* ClientChannelData */
+		                        demo_server_channel_data,      /* ServerChannelData */
+		                        demo_dynamic_channel_create,   /* DynamicChannelCreate */
+		                        demo_server_fetch_target_addr, /* ServerFetchTargetAddr */
+		                        nullptr,                       /* proxyPluginsManager */
+		                        userdata,                      /* userdata */
+		                        nullptr };                     /* custom */
 
 	custom = (struct demo_custom_data*)calloc(1, sizeof(struct demo_custom_data));
 	if (!custom)
