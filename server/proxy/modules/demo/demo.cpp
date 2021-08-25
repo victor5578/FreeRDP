@@ -141,19 +141,40 @@ static BOOL demo_mouse_event(proxyPlugin* plugin, proxyData* pdata, void* param)
 
 static BOOL demo_client_channel_data(proxyPlugin* plugin, proxyData* pdata, void* param)
 {
-	WLog_INFO(TAG, "%s", __FUNCTION__);
+	const proxyChannelDataEventInfo* channel = static_cast<const proxyChannelDataEventInfo*>(param);
+
+	WINPR_ASSERT(plugin);
+	WINPR_ASSERT(pdata);
+	WINPR_ASSERT(param);
+
+	WLog_INFO(TAG, "%s: %s [0x%04" PRIx16 "]", __FUNCTION__, channel->channel_name,
+	          channel->channel_id);
 	return TRUE;
 }
 
 static BOOL demo_server_channel_data(proxyPlugin* plugin, proxyData* pdata, void* param)
 {
-	WLog_INFO(TAG, "%s", __FUNCTION__);
+	const proxyChannelDataEventInfo* channel = static_cast<const proxyChannelDataEventInfo*>(param);
+
+	WINPR_ASSERT(plugin);
+	WINPR_ASSERT(pdata);
+	WINPR_ASSERT(param);
+
+	WLog_INFO(TAG, "%s: %s [0x%04" PRIx16 "]", __FUNCTION__, channel->channel_name,
+	          channel->channel_id);
 	return TRUE;
 }
 
 static BOOL demo_dynamic_channel_create(proxyPlugin* plugin, proxyData* pdata, void* param)
 {
-	WLog_INFO(TAG, "%s", __FUNCTION__);
+	const proxyChannelDataEventInfo* channel = static_cast<const proxyChannelDataEventInfo*>(param);
+
+	WINPR_ASSERT(plugin);
+	WINPR_ASSERT(pdata);
+	WINPR_ASSERT(param);
+
+	WLog_INFO(TAG, "%s: %s [0x%04" PRIx16 "]", __FUNCTION__, channel->channel_name,
+	          channel->channel_id);
 	return TRUE;
 }
 
