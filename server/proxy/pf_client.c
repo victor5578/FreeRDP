@@ -28,6 +28,7 @@
 #include <freerdp/client/cmdline.h>
 
 #include <freerdp/server/proxy/proxy_log.h>
+#include <freerdp/channels/drdynvc.h>
 
 #include "pf_channels.h"
 #include "pf_gdi.h"
@@ -352,7 +353,7 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
 			 * CREATE_REQUEST_PDU (0x01) packets as invalid.
 			 */
 			if ((flags & CHANNEL_FLAG_FIRST) &&
-			    (strncmp(channel_name, "drdynvc", CHANNEL_NAME_LEN + 1) == 0))
+			    (strncmp(channel_name, DRDYNVC_SVC_CHANNEL_NAME, CHANNEL_NAME_LEN + 1) == 0))
 			{
 				BYTE cmd;
 				if (size < 1)
