@@ -380,7 +380,7 @@ static BOOL pf_modules_load_module(const char* module_path, proxyModule* module,
 	proxyModuleEntryPoint pEntryPoint;
 	WINPR_ASSERT(module);
 
-	handle = LoadLibraryA(module_path);
+	handle = LoadLibraryX(module_path);
 
 	if (handle == NULL)
 	{
