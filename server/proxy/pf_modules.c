@@ -22,6 +22,7 @@
 
 #include <winpr/file.h>
 #include <winpr/wlog.h>
+#include <winpr/path.h>
 #include <winpr/library.h>
 #include <freerdp/api.h>
 #include <freerdp/build-config.h>
@@ -341,6 +342,8 @@ static BOOL pf_modules_load_ArrayList_ForEachFkt(void* data, size_t index, va_li
 BOOL pf_modules_is_plugin_loaded(proxyModule* module, const char* plugin_name)
 {
 	WINPR_ASSERT(module);
+	if (ArrayList_Count(module->plugins) < 1)
+		return FALSE;
 	return ArrayList_ForEach(module->plugins, pf_modules_load_ArrayList_ForEachFkt, plugin_name);
 }
 
@@ -385,7 +388,8 @@ static BOOL pf_modules_load_module(const char* module_path, proxyModule* module,
 		return FALSE;
 	}
 
-	if (!(pEntryPoint = (proxyModuleEntryPoint)GetProcAddress(handle, MODULE_ENTRY_POINT)))
+	pEntryPoint = (proxyModuleEntryPoint)GetProcAddress(handle, MODULE_ENTRY_POINT);
+	if (!pEntryPoint)
 	{
 		WLog_ERR(TAG, "[%s]: GetProcAddress failed while loading %s", __FUNCTION__, module_path);
 		goto error;
@@ -434,6 +438,7 @@ proxyModule* pf_modules_new(const char* root_dir, const char** modules, size_t c
 {
 	size_t i;
 	wObject* obj;
+	char* path = NULL;
 	proxyModule* module = calloc(1, sizeof(proxyModule));
 	if (!module)
 		return NULL;
@@ -466,21 +471,31 @@ proxyModule* pf_modules_new(const char* root_dir, const char** modules, size_t c
 
 	if (count > 0)
 	{
-		if (!PathFileExistsA(root_dir))
+		WINPR_ASSERT(root_dir);
+		if (!winpr_PathFileExists(root_dir))
+			path = GetCombinedPath(FREERDP_INSTALL_PREFIX, root_dir);
+		else
+			path = _strdup(root_dir);
+
+		if (!winpr_PathFileExists(path))
 		{
-			if (!CreateDirectoryA(root_dir, NULL))
+			if (!winpr_PathMakePath(path, NULL))
 			{
 				WLog_ERR(TAG, "error occurred while creating modules directory: %s", root_dir);
 				goto error;
 			}
 		}
 
-		if (PathFileExistsA(root_dir))
-			WLog_DBG(TAG, "modules root directory: %s", root_dir);
+		if (winpr_PathFileExists(path))
+			WLog_DBG(TAG, "modules root directory: %s", path);
 
 		for (i = 0; i < count; i++)
 		{
-			char* fullpath = GetCombinedPath(root_dir, modules[i]);
+			char name[8192] = { 0 };
+			char* fullpath;
+			_snprintf(name, sizeof(name), "proxy-%s-plugin%s", modules[i],
+			          FREERDP_SHARED_LIBRARY_SUFFIX);
+			fullpath = GetCombinedPath(path, name);
 			pf_modules_load_module(fullpath, module, NULL);
 			free(fullpath);
 		}
@@ -489,6 +504,7 @@ proxyModule* pf_modules_new(const char* root_dir, const char** modules, size_t c
 	return module;
 
 error:
+	free(path);
 	pf_modules_free(module);
 	return NULL;
 }
