@@ -427,6 +427,12 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
 				}
 			}
 			server_channel_id = WTSChannelGetId(ps->context.peer, channel_name);
+
+			/* Ignore messages for channels that can not be mapped.
+			 * The client might not have enabled support for this specific channel,
+			 * so just drop the message. */
+			if (server_channel_id == 0)
+				return TRUE;
 			return ps->context.peer->SendChannelData(ps->context.peer, server_channel_id, data,
 			                                         size);
 		}
