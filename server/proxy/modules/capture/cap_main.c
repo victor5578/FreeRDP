@@ -280,7 +280,16 @@ static BOOL capture_plugin_unload(proxyPlugin* plugin)
 	return TRUE;
 }
 
-FREERDP_API BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, void* userdata)
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+	FREERDP_API BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, void* userdata);
+#ifdef __cplusplus
+}
+#endif
+
+BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, void* userdata)
 {
 	proxyPlugin demo_plugin = { PLUGIN_NAME,                        /* name */
 		                        PLUGIN_DESC,                        /* description */
