@@ -29,6 +29,8 @@
 
 #include <freerdp/server/proxy/proxy_log.h>
 #include <freerdp/channels/drdynvc.h>
+#include <freerdp/channels/encomsp.h>
+#include <freerdp/channels/rdpdr.h>
 
 #include "pf_channels.h"
 #include "pf_gdi.h"
@@ -250,21 +252,26 @@ static BOOL pf_client_pre_connect(freerdp* instance)
 	settings->GlyphSupportLevel = GLYPH_SUPPORT_NONE;
 	ZeroMemory(settings->OrderSupport, 32);
 
-	settings->SupportDynamicChannels = TRUE;
+	if (WTSVirtualChannelManagerIsChannelJoined(ps->vcm, DRDYNVC_SVC_CHANNEL_NAME))
+		settings->SupportDynamicChannels = TRUE;
 
 	/* Multimon */
 	settings->UseMultimon = TRUE;
 
 	/* Sound */
 	settings->AudioPlayback = config->AudioOutput;
-	settings->DeviceRedirection = TRUE;
+	if (WTSVirtualChannelManagerIsChannelJoined(ps->vcm, "rdpdr"))
+		settings->DeviceRedirection = TRUE;
 
 	/* Display control */
 	settings->SupportDisplayControl = config->DisplayControl;
 	settings->DynamicResolutionUpdate = config->DisplayControl;
-	settings->EncomspVirtualChannel = TRUE;
 
-	settings->RedirectClipboard = config->Clipboard;
+	if (WTSVirtualChannelManagerIsChannelJoined(ps->vcm, ENCOMSP_SVC_CHANNEL_NAME))
+		settings->EncomspVirtualChannel = TRUE;
+
+	if (WTSVirtualChannelManagerIsChannelJoined(ps->vcm, CLIPRDR_SVC_CHANNEL_NAME))
+		settings->RedirectClipboard = config->Clipboard;
 
 	settings->AutoReconnectionEnabled = TRUE;
 
