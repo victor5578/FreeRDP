@@ -91,6 +91,14 @@ static BOOL pf_modules_proxy_ArrayList_ForEachFkt(void* data, size_t index, va_l
 			ok = IFCALLRESULT(TRUE, plugin->ClientPostConnect, plugin, pdata);
 			break;
 
+		case HOOK_TYPE_CLIENT_POST_DISCONNECT:
+			ok = IFCALLRESULT(TRUE, plugin->ClientPostDisconnect, plugin, pdata);
+			break;
+
+		case HOOK_TYPE_CLIENT_VERIFY_X509:
+			ok = IFCALLRESULT(TRUE, plugin->ClientX509Certificate, plugin, pdata);
+			break;
+
 		case HOOK_TYPE_CLIENT_LOGIN_FAILURE:
 			ok = IFCALLRESULT(TRUE, plugin->ClientLoginFailure, plugin, pdata);
 			break;

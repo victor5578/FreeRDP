@@ -96,6 +96,12 @@ struct p_client_context
 	pReceiveChannelData client_receive_channel_data_original;
 	wArrayList* cached_server_channel_data;
 	BOOL (*sendChannelData)(pClientContext* pc, const proxyChannelDataEventInfo* ev);
+
+	/* X509 specific */
+	char* remote_hostname;
+	char* remote_pem;
+	UINT16 remote_port;
+	UINT32 remote_flags;
 };
 
 /**

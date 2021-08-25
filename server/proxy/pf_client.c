@@ -309,7 +309,7 @@ static BOOL pf_client_pre_connect(freerdp* instance)
 		return FALSE;
 	}
 
-	return TRUE;
+	return pf_modules_run_hook(pc->pdata->module, HOOK_TYPE_CLIENT_PRE_CONNECT, pc->pdata);
 }
 
 static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channelId,
@@ -570,7 +570,7 @@ static BOOL pf_client_post_connect(freerdp* instance)
  */
 static void pf_client_post_disconnect(freerdp* instance)
 {
-	pClientContext* context;
+	pClientContext* pc;
 	proxyData* pdata;
 
 	if (!instance)
@@ -579,10 +579,12 @@ static void pf_client_post_disconnect(freerdp* instance)
 	if (!instance->context)
 		return;
 
-	context = (pClientContext*)instance->context;
-	WINPR_ASSERT(context);
-	pdata = context->pdata;
+	pc = (pClientContext*)instance->context;
+	WINPR_ASSERT(pc);
+	pdata = pc->pdata;
 	WINPR_ASSERT(pdata);
+
+	pf_modules_run_hook(pc->pdata->module, HOOK_TYPE_CLIENT_POST_CONNECT, pc->pdata);
 
 	PubSub_UnsubscribeChannelConnected(instance->context->pubSub,
 	                                   pf_channels_on_client_channel_connect);
@@ -592,7 +594,7 @@ static void pf_client_post_disconnect(freerdp* instance)
 	gdi_free(instance);
 
 	/* Only close the connection if NLA fallback process is done */
-	if (!context->allow_next_conn_failure)
+	if (!pc->allow_next_conn_failure)
 		proxy_data_abort_connect(pdata);
 }
 
@@ -735,12 +737,6 @@ static DWORD WINAPI pf_client_thread_proc(LPVOID arg)
 	 */
 	handles[nCount++] = pdata->abort_event;
 
-	if (!pf_modules_run_hook(pdata->module, HOOK_TYPE_CLIENT_PRE_CONNECT, pdata))
-	{
-		proxy_data_abort_connect(pdata);
-		return FALSE;
-	}
-
 	if (!pf_client_connect(instance))
 	{
 		proxy_data_abort_connect(pdata);
@@ -810,6 +806,8 @@ static void pf_client_context_free(freerdp* instance, rdpContext* context)
 		return;
 
 	ArrayList_Free(pc->cached_server_channel_data);
+	free(pc->remote_pem);
+	free(pc->remote_hostname);
 }
 
 static int pf_client_verify_X509_certificate(freerdp* instance, const BYTE* data, size_t length,
@@ -825,6 +823,24 @@ static int pf_client_verify_X509_certificate(freerdp* instance, const BYTE* data
 	pc = (pClientContext*)instance->context;
 	WINPR_ASSERT(pc);
 
+	free(pc->remote_pem);
+	free(pc->remote_hostname);
+	pc->remote_pem = NULL;
+	pc->remote_hostname = NULL;
+
+	if (length > 0)
+	{
+		pc->remote_pem = malloc(length);
+		WINPR_ASSERT(pc->remote_pem);
+		memcpy(pc->remote_pem, data, length);
+	}
+	if (hostname)
+		pc->remote_hostname = _strdup(hostname);
+	pc->remote_port = port;
+	pc->remote_flags = flags;
+
+	if (!pf_modules_run_hook(pc->pdata->module, HOOK_TYPE_CLIENT_VERIFY_X509, pc->pdata))
+		return 0;
 	return 1;
 }
 

@@ -52,6 +52,8 @@ struct proxy_plugin
 	/* proxy hooks. a module can set these function pointers to register hooks */
 	proxyHookFn ClientPreConnect;
 	proxyHookFn ClientPostConnect;
+	proxyHookFn ClientPostDisconnect;
+	proxyHookFn ClientX509Certificate;
 	proxyHookFn ClientLoginFailure;
 	proxyHookFn ClientEndPaint;
 	proxyHookFn ServerPostConnect;
