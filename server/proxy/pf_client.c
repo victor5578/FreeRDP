@@ -329,7 +329,6 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
 		const char* cname = config->Passthrough[i];
 		if (strncmp(channel_name, cname, CHANNEL_NAME_LEN + 1) == 0)
 		{
-			BOOL forward = TRUE;
 			proxyChannelDataEventInfo ev;
 			UINT16 server_channel_id;
 
@@ -340,7 +339,7 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
 
 			if (!pf_modules_run_filter(pdata->module, FILTER_TYPE_CLIENT_PASSTHROUGH_CHANNEL_DATA,
 			                           pdata, &ev))
-				return FALSE;
+				return TRUE; /* Silently drop */
 
 			/* Dynamic channels need special treatment
 			 *
@@ -402,17 +401,15 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
 					dev.data = data;
 					dev.data_len = size;
 
-					forward = pf_modules_run_filter(
-					    pdata->module, FILTER_TYPE_CLIENT_PASSTHROUGH_DYN_CHANNEL_CREATE, pdata,
-					    &dev);
+					if (!pf_modules_run_filter(pdata->module,
+					                           FILTER_TYPE_CLIENT_PASSTHROUGH_DYN_CHANNEL_CREATE,
+					                           pdata, &dev))
+						return TRUE; /* Silently drop */
 				}
 			}
-			if (forward)
-			{
-				server_channel_id = WTSChannelGetId(ps->context.peer, channel_name);
-				return ps->context.peer->SendChannelData(ps->context.peer, server_channel_id, data,
-				                                         size);
-			}
+			server_channel_id = WTSChannelGetId(ps->context.peer, channel_name);
+			return ps->context.peer->SendChannelData(ps->context.peer, server_channel_id, data,
+			                                         size);
 		}
 	}
 
