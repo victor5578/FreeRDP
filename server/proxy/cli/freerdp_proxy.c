@@ -34,6 +34,21 @@
 
 static proxyServer* server = NULL;
 
+#if defined(_WIN32)
+static const char* strsignal(int signum)
+{
+	switch (signum)
+	{
+		case SIGINT:
+			return "SIGINT";
+		case SIGTERM:
+			return "SIGTERM";
+		default:
+			return "UNKNOWN";
+	}
+}
+#endif
+
 static void cleanup_handler(int signum)
 {
 	printf("\n");
