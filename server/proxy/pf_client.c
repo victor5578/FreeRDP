@@ -329,29 +329,29 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
 					proxyChannelDataEventInfo dev;
 					size_t len, nameLen;
 					const char* name;
-					UINT32 channelId;
+					UINT32 dynChannelId;
 					BYTE cbId = data[0] & 0x03;
 					switch (cbId)
 					{
 						case 0x00:
 							if (size < 2)
 								return FALSE;
-							channelId = data[1];
-							name = (char*)&data[2];
+							dynChannelId = data[1];
+							name = (const char*)&data[2];
 							nameLen = size - 2;
 							break;
 						case 0x01:
 							if (size < 3)
 								return FALSE;
-							channelId = data[2] << 8 | data[1];
-							name = (char*)&data[3];
+							dynChannelId = data[2] << 8 | data[1];
+							name = (const char*)&data[3];
 							nameLen = size - 3;
 							break;
 						case 0x02:
 							if (size < 5)
 								return FALSE;
-							channelId = data[4] << 24 | data[3] << 16 | data[2] << 8 | data[1];
-							name = (char*)&data[5];
+							dynChannelId = data[4] << 24 | data[3] << 16 | data[2] << 8 | data[1];
+							name = (const char*)&data[5];
 							nameLen = size - 5;
 							break;
 						default:
@@ -361,7 +361,7 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
 					len = strnlen(name, nameLen);
 					if ((len == 0) || (len == nameLen))
 						return FALSE;
-					dev.channel_id = channelId;
+					dev.channel_id = dynChannelId;
 					dev.channel_name = name;
 					dev.data = data;
 					dev.data_len = size;
@@ -763,17 +763,6 @@ static int pf_logon_error_info(freerdp* instance, UINT32 data, UINT32 type)
 	return 1;
 }
 
-BOOL pf_client_context_new(freerdp* instance, rdpContext* context)
-{
-	pClientContext* pc = (pClientContext*)context;
-
-	WINPR_UNUSED(instance);
-	WINPR_ASSERT(instance);
-	WINPR_ASSERT(context);
-	pc->remote_pem = Stream_New(NULL, 4096);
-	return pc->remote_pem != NULL;
-}
-
 static void pf_client_context_free(freerdp* instance, rdpContext* context)
 {
 	pClientContext* pc = (pClientContext*)context;
@@ -866,9 +855,11 @@ static BOOL pf_client_client_new(freerdp* instance, rdpContext* context)
 	instance->PostConnect = pf_client_post_connect;
 	instance->PostDisconnect = pf_client_post_disconnect;
 	instance->LogonErrorInfo = pf_logon_error_info;
-	instance->ContextNew = pf_client_context_new;
-	instance->ContextFree = pf_client_context_free;
 	instance->VerifyX509Certificate = pf_client_verify_X509_certificate;
+
+	pc->remote_pem = Stream_New(NULL, 4096);
+	if (!pc->remote_pem)
+		return FALSE;
 
 	pc->sendChannelData = pf_client_send_channel_data;
 	pc->cached_server_channel_data = ArrayList_New(TRUE);
@@ -918,6 +909,7 @@ int RdpClientEntry(RDP_CLIENT_ENTRY_POINTS* pEntryPoints)
 	pEntryPoints->ContextSize = sizeof(pClientContext);
 	/* Client init and finish */
 	pEntryPoints->ClientNew = pf_client_client_new;
+	pEntryPoints->ClientFree = pf_client_context_free;
 	pEntryPoints->ClientStop = pf_client_client_stop;
 	return 0;
 }
