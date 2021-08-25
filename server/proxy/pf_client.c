@@ -143,56 +143,6 @@ static BOOL pf_client_load_rdpsnd(pClientContext* pc)
 	return TRUE;
 }
 
-static BOOL pf_client_passthrough_channels_init(pClientContext* pc)
-{
-	pServerContext* ps;
-	rdpSettings* settings;
-	const proxyConfig* config;
-	size_t i;
-
-	WINPR_ASSERT(pc);
-	WINPR_ASSERT(pc->pdata);
-	ps = pc->pdata->ps;
-	WINPR_ASSERT(ps);
-	settings = pc->context.settings;
-	WINPR_ASSERT(settings);
-	config = pc->pdata->config;
-	WINPR_ASSERT(config);
-
-	if (settings->ChannelCount + config->PassthroughCount >= settings->ChannelDefArraySize)
-	{
-		PROXY_LOG_ERR(TAG, pc, "too many channels");
-		return FALSE;
-	}
-
-	if (!config->PassthroughIsBlacklist)
-	{
-		for (i = 0; i < config->PassthroughCount; i++)
-		{
-			const char* channel_name = config->Passthrough[i];
-			CHANNEL_DEF channel = { 0 };
-
-			/* only connect connect this channel if already joined in peer connection */
-			if (!WTSVirtualChannelManagerIsChannelJoined(ps->vcm, channel_name))
-			{
-				PROXY_LOG_INFO(TAG, ps,
-				               "client did not connected with channel %s, skipping passthrough",
-				               channel_name);
-
-				continue;
-			}
-
-			channel.options = CHANNEL_OPTION_INITIALIZED; /* TODO: Export to config. */
-			strncpy(channel.name, channel_name, CHANNEL_NAME_LEN);
-
-			freerdp_settings_set_pointer_array(settings, FreeRDP_ChannelDefArray,
-			                                   settings->ChannelCount++, &channel);
-		}
-	}
-
-	return TRUE;
-}
-
 static BOOL pf_client_use_peer_load_balance_info(pClientContext* pc)
 {
 	pServerContext* ps;
@@ -294,9 +244,6 @@ static BOOL pf_client_pre_connect(freerdp* instance)
 	if (!pf_client_use_peer_load_balance_info(pc))
 		return FALSE;
 
-	if (!pf_client_passthrough_channels_init(pc))
-		return FALSE;
-
 	if (!pf_client_load_rdpsnd(pc))
 	{
 		PROXY_LOG_ERR(TAG, pc, "Failed to load rdpsnd client");
@@ -321,7 +268,6 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
 	pServerContext* ps;
 	proxyData* pdata;
 	const proxyConfig* config;
-	size_t i;
 	int pass;
 
 	WINPR_ASSERT(instance);
@@ -470,9 +416,13 @@ static BOOL pf_client_send_channel_data(pClientContext* pc, const proxyChannelDa
 	}
 	else
 	{
-		UINT16 channelId = freerdp_channels_get_id_by_name(pc->context.instance, ev->channel_name);
+		UINT16 channelId;
+		WINPR_ASSERT(pc->context.instance);
+
+		channelId = freerdp_channels_get_id_by_name(pc->context.instance, ev->channel_name);
 		WINPR_ASSERT(channelId > 0);
 		WINPR_ASSERT(channelId < UINT16_MAX);
+		WINPR_ASSERT(pc->context.instance->SendChannelData);
 		return pc->context.instance->SendChannelData(pc->context.instance, channelId, ev->data,
 		                                             ev->data_len);
 	}
