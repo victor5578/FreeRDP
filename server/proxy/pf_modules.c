@@ -83,6 +83,12 @@ static BOOL pf_modules_proxy_ArrayList_ForEachFkt(void* data, size_t index, va_l
 
 	switch (type)
 	{
+		case HOOK_TYPE_CLIENT_INIT_CONNECT:
+			ok = IFCALLRESULT(TRUE, plugin->ClientInitConnect, plugin, pdata);
+			break;
+		case HOOK_TYPE_CLIENT_UNINIT_CONNECT:
+			ok = IFCALLRESULT(TRUE, plugin->ClientUninitConnect, plugin, pdata);
+			break;
 		case HOOK_TYPE_CLIENT_PRE_CONNECT:
 			ok = IFCALLRESULT(TRUE, plugin->ClientPreConnect, plugin, pdata);
 			break;

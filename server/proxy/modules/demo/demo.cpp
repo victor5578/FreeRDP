@@ -73,6 +73,8 @@ FREERDP_API BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, 
 	proxyPlugin demo_plugin = { plugin_name,                /* name */
 		                        plugin_desc,                /* description */
 		                        demo_plugin_unload,         /* PluginUnload */
+		                        nullptr,                    /* ClientInitConnect */
+		                        nullptr,                    /* ClientUninitConnect */
 		                        nullptr,                    /* ClientPreConnect */
 		                        nullptr,                    /* ClientPostConnect */
 		                        nullptr,                    /* ClientPostDisconnect */

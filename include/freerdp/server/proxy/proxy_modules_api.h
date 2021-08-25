@@ -50,6 +50,8 @@ struct proxy_plugin
 	BOOL (*PluginUnload)(proxyPlugin* plugin);
 
 	/* proxy hooks. a module can set these function pointers to register hooks */
+	proxyHookFn ClientInitConnect;
+	proxyHookFn ClientUninitConnect;
 	proxyHookFn ClientPreConnect;
 	proxyHookFn ClientPostConnect;
 	proxyHookFn ClientPostDisconnect;
