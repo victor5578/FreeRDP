@@ -815,6 +815,7 @@ static int pf_client_verify_X509_certificate(freerdp* instance, const BYTE* data
 	pc->remote_port = port;
 	pc->remote_flags = flags;
 
+	Stream_SealLength(pc->remote_pem);
 	if (!pf_modules_run_hook(pc->pdata->module, HOOK_TYPE_CLIENT_VERIFY_X509, pc->pdata))
 		return 0;
 	return 1;
