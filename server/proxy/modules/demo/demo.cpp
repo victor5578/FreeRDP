@@ -85,10 +85,11 @@ FREERDP_API BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, 
 		                        nullptr,                    /* MouseEvent */
 		                        nullptr,                    /* ClientChannelData */
 		                        nullptr,                    /* ServerChannelData */
+		                        nullptr,                    /* DynamicChannelCreate */
 		                        nullptr,                    /* ServerFetchTargetAddr */
-		                        nullptr,
-		                        userdata,
-		                        nullptr };
+		                        nullptr,                    /* proxyPluginsManager */
+		                        userdata,                   /* userdata */
+		                        nullptr };                  /* custom */
 
 	custom = (struct demo_custom_data*)calloc(1, sizeof(struct demo_custom_data));
 	if (!custom)

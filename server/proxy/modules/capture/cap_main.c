@@ -297,9 +297,10 @@ FREERDP_API BOOL proxy_module_entry_point(proxyPluginsManager* plugins_manager, 
 		                        NULL,                               /* MouseEvent */
 		                        NULL,                               /* ClientChannelData */
 		                        NULL,                               /* ServerChannelData */
+		                        NULL,                               /* DynamicChannelCreate */
 		                        NULL,                               /* ServerFetchTargetAddr */
-		                        NULL,
-		                        userdata,
+		                        NULL,                               /* proxyPluginsManager */
+		                        userdata,                           /* userdata */
 		                        NULL };
 	captureConfig* cconfig = calloc(1, sizeof(captureConfig));
 	if (!cconfig)
