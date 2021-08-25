@@ -58,6 +58,8 @@ struct proxy_config
 	BOOL Clipboard;
 	BOOL AudioOutput;
 	BOOL RemoteApp;
+
+	BOOL PassthroughIsBlacklist;
 	char** Passthrough;
 	size_t PassthroughCount;
 

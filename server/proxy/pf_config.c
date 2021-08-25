@@ -200,6 +200,9 @@ static BOOL pf_config_load_channels(wIniFile* ini, proxyConfig* config)
 	config->Clipboard = pf_config_get_bool(ini, "Channels", "Clipboard", FALSE);
 	config->AudioOutput = pf_config_get_bool(ini, "Channels", "AudioOutput", TRUE);
 	config->RemoteApp = pf_config_get_bool(ini, "Channels", "RemoteApp", FALSE);
+	config->PassthroughIsBlacklist =
+	    pf_config_get_bool(ini, "Channels", "PassthroughIsBlacklist", FALSE);
+
 	config->Passthrough = pf_config_parse_comma_separated_list(
 	    pf_config_get_str(ini, "Channels", "Passthrough", FALSE), &config->PassthroughCount);
 
@@ -525,6 +528,7 @@ void pf_server_config_print(const proxyConfig* config)
 	CONFIG_PRINT_BOOL(config, Clipboard);
 	CONFIG_PRINT_BOOL(config, AudioOutput);
 	CONFIG_PRINT_BOOL(config, RemoteApp);
+	CONFIG_PRINT_BOOL(config, PassthroughIsBlacklist);
 
 	if (config->PassthroughCount)
 	{

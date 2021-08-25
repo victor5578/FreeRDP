@@ -45,6 +45,7 @@
 #include "pf_rail.h"
 #include "pf_channels.h"
 #include "proxy_modules.h"
+#include "pf_utils.h"
 
 #define TAG PROXY_TAG("server")
 
@@ -261,7 +262,7 @@ static BOOL pf_server_receive_channel_data_hook(freerdp_peer* peer, UINT16 chann
 	pClientContext* pc;
 	proxyData* pdata;
 	const proxyConfig* config;
-	size_t i;
+	int pass;
 	const char* channel_name = WTSChannelGetName(peer, channelId);
 
 	WINPR_ASSERT(peer);
@@ -283,10 +284,12 @@ static BOOL pf_server_receive_channel_data_hook(freerdp_peer* peer, UINT16 chann
 	if (!pc)
 		goto original_cb;
 
-	for (i = 0; i < config->PassthroughCount; i++)
+	pass = pf_utils_channel_is_passthrough(config, channel_name);
+	switch (pass)
 	{
-		const char* cname = config->Passthrough[i];
-		if (strncmp(channel_name, cname, CHANNEL_NAME_LEN + 1) == 0)
+		case 0:
+			return TRUE;
+		case 1:
 		{
 			proxyChannelDataEventInfo ev;
 
@@ -297,10 +300,12 @@ static BOOL pf_server_receive_channel_data_hook(freerdp_peer* peer, UINT16 chann
 
 			if (!pf_modules_run_filter(pdata->module, FILTER_TYPE_SERVER_PASSTHROUGH_CHANNEL_DATA,
 			                           pdata, &ev))
-				return FALSE;
+				return TRUE; /* Silently ignore */
 
 			return pc->sendChannelData(pc, &ev);
 		}
+		default:
+			break;
 	}
 
 original_cb:

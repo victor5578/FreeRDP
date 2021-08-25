@@ -150,7 +150,8 @@ BOOL pf_context_copy_settings(rdpSettings* dst, const rdpSettings* src)
 			goto out_fail;
 	}
 
-	rc = TRUE;
+	/* We handle certificate management for this client ourselfes. */
+	rc = freerdp_settings_set_bool(dst, FreeRDP_ExternalCertificateManagement, TRUE);
 
 out_fail:
 	freerdp_settings_free(before_copy);

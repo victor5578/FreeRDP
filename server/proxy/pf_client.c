@@ -39,6 +39,7 @@
 #include "pf_input.h"
 #include <freerdp/server/proxy/proxy_config.h>
 #include "proxy_modules.h"
+#include "pf_utils.h"
 
 #define TAG PROXY_TAG("client")
 
@@ -162,26 +163,29 @@ static BOOL pf_client_passthrough_channels_init(pClientContext* pc)
 		return FALSE;
 	}
 
-	for (i = 0; i < config->PassthroughCount; i++)
+	if (!config->PassthroughIsBlacklist)
 	{
-		const char* channel_name = config->Passthrough[i];
-		CHANNEL_DEF channel = { 0 };
-
-		/* only connect connect this channel if already joined in peer connection */
-		if (!WTSVirtualChannelManagerIsChannelJoined(ps->vcm, channel_name))
+		for (i = 0; i < config->PassthroughCount; i++)
 		{
-			PROXY_LOG_INFO(TAG, ps,
-			               "client did not connected with channel %s, skipping passthrough",
-			               channel_name);
+			const char* channel_name = config->Passthrough[i];
+			CHANNEL_DEF channel = { 0 };
 
-			continue;
+			/* only connect connect this channel if already joined in peer connection */
+			if (!WTSVirtualChannelManagerIsChannelJoined(ps->vcm, channel_name))
+			{
+				PROXY_LOG_INFO(TAG, ps,
+				               "client did not connected with channel %s, skipping passthrough",
+				               channel_name);
+
+				continue;
+			}
+
+			channel.options = CHANNEL_OPTION_INITIALIZED; /* TODO: Export to config. */
+			strncpy(channel.name, channel_name, CHANNEL_NAME_LEN);
+
+			freerdp_settings_set_pointer_array(settings, FreeRDP_ChannelDefArray,
+			                                   settings->ChannelCount++, &channel);
 		}
-
-		channel.options = CHANNEL_OPTION_INITIALIZED; /* TODO: Export to config. */
-		strncpy(channel.name, channel_name, CHANNEL_NAME_LEN);
-
-		freerdp_settings_set_pointer_array(settings, FreeRDP_ChannelDefArray,
-		                                   settings->ChannelCount++, &channel);
 	}
 
 	return TRUE;
@@ -308,6 +312,7 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
 	proxyData* pdata;
 	const proxyConfig* config;
 	size_t i;
+	int pass;
 
 	WINPR_ASSERT(instance);
 	WINPR_ASSERT(data || (size == 0));
@@ -325,10 +330,13 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
 	config = pdata->config;
 	WINPR_ASSERT(config);
 
-	for (i = 0; i < config->PassthroughCount; i++)
+	pass = pf_utils_channel_is_passthrough(config, channel_name);
+
+	switch (pass)
 	{
-		const char* cname = config->Passthrough[i];
-		if (strncmp(channel_name, cname, CHANNEL_NAME_LEN + 1) == 0)
+		case 0:
+			return TRUE; /* Silently drop */
+		case 1:
 		{
 			proxyChannelDataEventInfo ev;
 			UINT16 server_channel_id;
@@ -412,11 +420,11 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
 			return ps->context.peer->SendChannelData(ps->context.peer, server_channel_id, data,
 			                                         size);
 		}
+		default:
+			WINPR_ASSERT(pc->client_receive_channel_data_original);
+			return pc->client_receive_channel_data_original(instance, channelId, data, size, flags,
+			                                                totalSize);
 	}
-
-	WINPR_ASSERT(pc->client_receive_channel_data_original);
-	return pc->client_receive_channel_data_original(instance, channelId, data, size, flags,
-	                                                totalSize);
 }
 
 static BOOL pf_client_on_server_heartbeat(freerdp* instance, BYTE period, BYTE count1, BYTE count2)
@@ -794,6 +802,22 @@ static void pf_client_context_free(freerdp* instance, rdpContext* context)
 	ArrayList_Free(pc->cached_server_channel_data);
 }
 
+static int pf_client_verify_X509_certificate(freerdp* instance, const BYTE* data, size_t length,
+                                             const char* hostname, UINT16 port, DWORD flags)
+{
+	pClientContext* pc;
+
+	WINPR_ASSERT(instance);
+	WINPR_ASSERT(data);
+	WINPR_ASSERT(length > 0);
+	WINPR_ASSERT(hostname);
+
+	pc = (pClientContext*)instance->context;
+	WINPR_ASSERT(pc);
+
+	return 1;
+}
+
 static void* channel_data_copy(const void* obj)
 {
 	const proxyChannelDataEventInfo* src = obj;
@@ -840,6 +864,7 @@ static BOOL pf_client_client_new(freerdp* instance, rdpContext* context)
 	instance->PostDisconnect = pf_client_post_disconnect;
 	instance->LogonErrorInfo = pf_logon_error_info;
 	instance->ContextFree = pf_client_context_free;
+	instance->VerifyX509Certificate = pf_client_verify_X509_certificate;
 
 	pc->sendChannelData = pf_client_send_channel_data;
 	pc->cached_server_channel_data = ArrayList_New(TRUE);

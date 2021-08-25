@@ -49,6 +49,8 @@ set(${MODULE_PREFIX}_SRCS
   pf_cliprdr.h
   pf_rdpsnd.c
   pf_rdpsnd.h
+  pf_utils.h
+  pf_utils.c
   )
 
 set(PROXY_APP_SRCS freerdp_proxy.c)
@@ -79,7 +81,6 @@ endif()
 
 set(${MODULE_PREFIX}_LIBS ${${MODULE_PREFIX}_LIBS} freerdp-server)
 set(${MODULE_PREFIX}_LIBS ${${MODULE_PREFIX}_LIBS} freerdp-client)
-
 if (NOT BUILTIN_CHANNELS)
     set(${MODULE_PREFIX}_LIBS ${${MODULE_PREFIX}_LIBS} rdpgfx-client)
     get_target_property(CUR_INSTALL_RPATH ${MODULE_NAME} INSTALL_RPATH)
@@ -88,7 +89,6 @@ if (NOT BUILTIN_CHANNELS)
     endif()
     set_target_properties(${MODULE_NAME} PROPERTIES INSTALL_RPATH ${CUR_INSTALL_RPATH})
 endif()
-
 set(${MODULE_PREFIX}_LIBS ${${MODULE_PREFIX}_LIBS} winpr freerdp)
 
 target_link_libraries(${MODULE_NAME} ${${MODULE_PREFIX}_LIBS})
@@ -96,7 +96,6 @@ install(TARGETS ${MODULE_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT ser
 if (WITH_DEBUG_SYMBOLS AND MSVC)
     install(FILES ${CMAKE_PDB_BINARY_DIR}/${MODULE_NAME}.pdb DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT symbols)
 endif()
-
 # pkg-config
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/freerdp-proxy.pc.in ${CMAKE_CURRENT_BINARY_DIR}/freerdp-server-proxy${FREERDP_VERSION_MAJOR}.pc @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/freerdp-server-proxy${FREERDP_VERSION_MAJOR}.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
