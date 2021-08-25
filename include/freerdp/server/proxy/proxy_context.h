@@ -99,7 +99,7 @@ struct p_client_context
 
 	/* X509 specific */
 	char* remote_hostname;
-	char* remote_pem;
+	wStream* remote_pem;
 	UINT16 remote_port;
 	UINT32 remote_flags;
 };

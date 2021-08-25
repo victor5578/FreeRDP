@@ -763,15 +763,27 @@ static int pf_logon_error_info(freerdp* instance, UINT32 data, UINT32 type)
 	return 1;
 }
 
+BOOL pf_client_context_new(freerdp* instance, rdpContext* context)
+{
+	pClientContext* pc = (pClientContext*)context;
+
+	WINPR_UNUSED(instance);
+	WINPR_ASSERT(instance);
+	WINPR_ASSERT(context);
+	pc->remote_pem = Stream_New(NULL, 4096);
+	return pc->remote_pem != NULL;
+}
+
 static void pf_client_context_free(freerdp* instance, rdpContext* context)
 {
 	pClientContext* pc = (pClientContext*)context;
+	WINPR_UNUSED(instance);
 
 	if (!pc)
 		return;
 
 	ArrayList_Free(pc->cached_server_channel_data);
-	free(pc->remote_pem);
+	Stream_Free(pc->remote_pem, TRUE);
 	free(pc->remote_hostname);
 }
 
@@ -788,17 +800,16 @@ static int pf_client_verify_X509_certificate(freerdp* instance, const BYTE* data
 	pc = (pClientContext*)instance->context;
 	WINPR_ASSERT(pc);
 
-	free(pc->remote_pem);
+	if (!Stream_EnsureCapacity(pc->remote_pem, length))
+		return 0;
+	Stream_SetPosition(pc->remote_pem, 0);
+
 	free(pc->remote_hostname);
-	pc->remote_pem = NULL;
 	pc->remote_hostname = NULL;
 
 	if (length > 0)
-	{
-		pc->remote_pem = malloc(length);
-		WINPR_ASSERT(pc->remote_pem);
-		memcpy(pc->remote_pem, data, length);
-	}
+		Stream_Write(pc->remote_pem, data, length);
+
 	if (hostname)
 		pc->remote_hostname = _strdup(hostname);
 	pc->remote_port = port;
@@ -854,6 +865,7 @@ static BOOL pf_client_client_new(freerdp* instance, rdpContext* context)
 	instance->PostConnect = pf_client_post_connect;
 	instance->PostDisconnect = pf_client_post_disconnect;
 	instance->LogonErrorInfo = pf_logon_error_info;
+	instance->ContextNew = pf_client_context_new;
 	instance->ContextFree = pf_client_context_free;
 	instance->VerifyX509Certificate = pf_client_verify_X509_certificate;
 
