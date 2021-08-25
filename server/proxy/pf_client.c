@@ -256,12 +256,15 @@ static BOOL pf_client_pre_connect(freerdp* instance)
 	settings->UseMultimon = TRUE;
 
 	/* Sound */
-	settings->AudioPlayback = FALSE;
+	settings->AudioPlayback = config->AudioOutput;
 	settings->DeviceRedirection = TRUE;
 
 	/* Display control */
 	settings->SupportDisplayControl = config->DisplayControl;
 	settings->DynamicResolutionUpdate = config->DisplayControl;
+	settings->EncomspVirtualChannel = TRUE;
+
+	settings->RedirectClipboard = config->Clipboard;
 
 	settings->AutoReconnectionEnabled = TRUE;
 
