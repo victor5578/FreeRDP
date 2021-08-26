@@ -129,6 +129,8 @@ typedef struct channel_data_event_info
 	/* actual data */
 	const BYTE* data;
 	size_t data_len;
+	size_t total_size;
+	UINT32 flags;
 } proxyChannelDataEventInfo;
 
 typedef enum proxy_fetch_target_method

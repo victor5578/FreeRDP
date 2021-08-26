@@ -301,6 +301,8 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
 			ev.channel_name = channel_name;
 			ev.data = data;
 			ev.data_len = size;
+			ev.flags = flags;
+			ev.total_size = totalSize;
 
 			if (!pf_modules_run_filter(pdata->module, FILTER_TYPE_CLIENT_PASSTHROUGH_CHANNEL_DATA,
 			                           pdata, &ev))
@@ -365,6 +367,8 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
 					dev.channel_name = name;
 					dev.data = data;
 					dev.data_len = size;
+					dev.flags = flags;
+					dev.total_size = totalSize;
 
 					if (!pf_modules_run_filter(pdata->module,
 					                           FILTER_TYPE_CLIENT_PASSTHROUGH_DYN_CHANNEL_CREATE,
@@ -379,8 +383,8 @@ static BOOL pf_client_receive_channel_data_hook(freerdp* instance, UINT16 channe
 			 * so just drop the message. */
 			if (server_channel_id == 0)
 				return TRUE;
-			return ps->context.peer->SendChannelData(ps->context.peer, server_channel_id, data,
-			                                         size);
+			return ps->context.peer->SendChannelPacket(ps->context.peer, server_channel_id,
+			                                           totalSize, flags, data, size);
 		}
 		default:
 			WINPR_ASSERT(pc->client_receive_channel_data_original);
@@ -423,8 +427,8 @@ static BOOL pf_client_send_channel_data(pClientContext* pc, const proxyChannelDa
 		WINPR_ASSERT(channelId > 0);
 		WINPR_ASSERT(channelId < UINT16_MAX);
 		WINPR_ASSERT(pc->context.instance->SendChannelData);
-		return pc->context.instance->SendChannelData(pc->context.instance, channelId, ev->data,
-		                                             ev->data_len);
+		return pc->context.instance->SendChannelPacket(
+		    pc->context.instance, channelId, ev->total_size, ev->flags, ev->data, ev->data_len);
 	}
 }
 
