@@ -424,9 +424,10 @@ static BOOL pf_client_send_channel_data(pClientContext* pc, const proxyChannelDa
 		WINPR_ASSERT(pc->context.instance);
 
 		channelId = freerdp_channels_get_id_by_name(pc->context.instance, ev->channel_name);
-		WINPR_ASSERT(channelId > 0);
-		WINPR_ASSERT(channelId < UINT16_MAX);
-		WINPR_ASSERT(pc->context.instance->SendChannelData);
+		/* Ignore unmappable channels */
+		if ((channelId == 0) || (channelId == UINT16_MAX))
+			return TRUE;
+		WINPR_ASSERT(pc->context.instance->SendChannelPacket);
 		return pc->context.instance->SendChannelPacket(
 		    pc->context.instance, channelId, ev->total_size, ev->flags, ev->data, ev->data_len);
 	}
