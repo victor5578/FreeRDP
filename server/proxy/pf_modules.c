@@ -501,6 +501,7 @@ proxyModule* pf_modules_new(const char* root_dir, const char** modules, size_t c
 		}
 	}
 
+	free(path);
 	return module;
 
 error:
