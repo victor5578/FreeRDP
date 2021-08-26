@@ -236,7 +236,7 @@ static BOOL pf_config_load_security(wIniFile* ini, proxyConfig* config)
 {
 	WINPR_ASSERT(config);
 	config->ServerTlsSecurity = pf_config_get_bool(ini, "Security", "ServerTlsSecurity", TRUE);
-	config->ServerNlaSecurity = pf_config_get_bool(ini, "Security", "ServerNlaSecurity", TRUE);
+	config->ServerNlaSecurity = pf_config_get_bool(ini, "Security", "ServerNlaSecurity", FALSE);
 	config->ServerRdpSecurity = pf_config_get_bool(ini, "Security", "ServerRdpSecurity", TRUE);
 
 	config->ClientTlsSecurity = pf_config_get_bool(ini, "Security", "ClientTlsSecurity", TRUE);
