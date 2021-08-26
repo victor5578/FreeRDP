@@ -247,6 +247,15 @@ static BOOL pf_server_activate(freerdp_peer* peer)
 	return TRUE;
 }
 
+static BOOL pf_server_logon(freerdp_peer* peer, SEC_WINNT_AUTH_IDENTITY* identity, BOOL automatic)
+{
+	WINPR_ASSERT(peer);
+	WINPR_ASSERT(peer->settings);
+	WINPR_ASSERT(identity);
+
+	return TRUE;
+}
+
 static BOOL pf_server_adjust_monitor_layout(freerdp_peer* peer)
 {
 	WINPR_ASSERT(peer);
@@ -375,7 +384,7 @@ static BOOL pf_server_initialize_peer_connection(freerdp_peer* peer)
 
 	settings->RdpSecurity = config->ServerRdpSecurity;
 	settings->TlsSecurity = config->ServerTlsSecurity;
-	settings->NlaSecurity = FALSE; /* currently NLA is not supported in proxy server */
+	settings->NlaSecurity = config->ServerNlaSecurity;
 	settings->EncryptionLevel = ENCRYPTION_LEVEL_CLIENT_COMPATIBLE;
 	settings->ColorDepth = 32;
 	settings->SuppressOutput = TRUE;
@@ -384,6 +393,7 @@ static BOOL pf_server_initialize_peer_connection(freerdp_peer* peer)
 
 	peer->PostConnect = pf_server_post_connect;
 	peer->Activate = pf_server_activate;
+	peer->Logon = pf_server_logon;
 	peer->AdjustMonitorsLayout = pf_server_adjust_monitor_layout;
 	peer->settings->MultifragMaxRequestSize = 0xFFFFFF; /* FIXME */
 

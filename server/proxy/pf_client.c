@@ -596,15 +596,13 @@ static void pf_client_set_security_settings(pClientContext* pc)
 
 	settings->RdpSecurity = config->ClientRdpSecurity;
 	settings->TlsSecurity = config->ClientTlsSecurity;
-	settings->NlaSecurity = FALSE;
+	settings->NlaSecurity = config->ClientNlaSecurity;
 
 	if (!config->ClientNlaSecurity)
 		return;
 
 	if (!settings->Username || !settings->Password)
 		return;
-
-	settings->NlaSecurity = TRUE;
 }
 
 static BOOL pf_client_connect_without_nla(pClientContext* pc)
@@ -617,6 +615,11 @@ static BOOL pf_client_connect_without_nla(pClientContext* pc)
 	WINPR_ASSERT(instance);
 	settings = pc->context.settings;
 	WINPR_ASSERT(settings);
+
+	/* If already disabled abort early. */
+	if (!settings->NlaSecurity)
+		return FALSE;
+
 	/* disable NLA */
 	settings->NlaSecurity = FALSE;
 

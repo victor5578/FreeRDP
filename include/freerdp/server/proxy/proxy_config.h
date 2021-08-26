@@ -45,6 +45,7 @@ struct proxy_config
 	/* server security */
 	BOOL ServerTlsSecurity;
 	BOOL ServerRdpSecurity;
+	BOOL ServerNlaSecurity;
 
 	/* client security */
 	BOOL ClientNlaSecurity;
