@@ -313,7 +313,7 @@ static BOOL pf_server_receive_channel_data_hook(freerdp_peer* peer, UINT16 chann
 			                           pdata, &ev))
 				return TRUE; /* Silently ignore */
 
-			return pc->sendChannelData(pc, &ev);
+			return IFCALLRESULT(TRUE, pc->sendChannelData, pc, &ev);
 		}
 		default:
 			break;

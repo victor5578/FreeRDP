@@ -545,6 +545,7 @@ static void pf_client_post_disconnect(freerdp* instance)
 	pdata = pc->pdata;
 	WINPR_ASSERT(pdata);
 
+	pc->connected = FALSE;
 	pf_modules_run_hook(pc->pdata->module, HOOK_TYPE_CLIENT_POST_CONNECT, pc->pdata);
 
 	PubSub_UnsubscribeChannelConnected(instance->context->pubSub,
@@ -779,6 +780,7 @@ static void pf_client_context_free(freerdp* instance, rdpContext* context)
 	if (!pc)
 		return;
 
+	pc->sendChannelData = NULL;
 	ArrayList_Free(pc->cached_server_channel_data);
 	Stream_Free(pc->remote_pem, TRUE);
 	free(pc->remote_hostname);
