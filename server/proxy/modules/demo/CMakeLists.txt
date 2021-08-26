@@ -27,6 +27,8 @@ add_library(${PROJECT_NAME} MODULE
 	demo.cpp
 )
 
+target_link_libraries(${PROJECT_NAME} winpr)
+
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
 set_target_properties(${PROJECT_NAME} PROPERTIES NO_SONAME 1)
 
