@@ -147,8 +147,8 @@ static BOOL demo_client_channel_data(proxyPlugin* plugin, proxyData* pdata, void
 	WINPR_ASSERT(pdata);
 	WINPR_ASSERT(param);
 
-	WLog_INFO(TAG, "%s: %s [0x%04" PRIx16 "]", __FUNCTION__, channel->channel_name,
-	          channel->channel_id);
+	WLog_INFO(TAG, "%s: %s [0x%04" PRIx16 "] got %" PRIuz, __FUNCTION__, channel->channel_name,
+	          channel->channel_id, channel->data_len);
 	return TRUE;
 }
 
@@ -160,8 +160,8 @@ static BOOL demo_server_channel_data(proxyPlugin* plugin, proxyData* pdata, void
 	WINPR_ASSERT(pdata);
 	WINPR_ASSERT(param);
 
-	WLog_INFO(TAG, "%s: %s [0x%04" PRIx16 "]", __FUNCTION__, channel->channel_name,
-	          channel->channel_id);
+	WLog_WARN(TAG, "%s: %s [0x%04" PRIx16 "] got %" PRIuz, __FUNCTION__, channel->channel_name,
+	          channel->channel_id, channel->data_len);
 	return TRUE;
 }
 
@@ -173,7 +173,7 @@ static BOOL demo_dynamic_channel_create(proxyPlugin* plugin, proxyData* pdata, v
 	WINPR_ASSERT(pdata);
 	WINPR_ASSERT(param);
 
-	WLog_INFO(TAG, "%s: %s [0x%04" PRIx16 "]", __FUNCTION__, channel->channel_name,
+	WLog_WARN(TAG, "%s: %s [0x%04" PRIx16 "]", __FUNCTION__, channel->channel_name,
 	          channel->channel_id);
 	return TRUE;
 }
